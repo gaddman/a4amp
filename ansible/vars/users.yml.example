@@ -1,0 +1,19 @@
+---
+# Probe and endpoint users to create (or delete)
+
+# Users to create, with hashed passwords and the local user's public SSH key (to allow passwordless login).
+# To set a new password run 'mkpasswd --method=sha-512' and copy the hash to here inside the single quotes
+# The SSH key should be copied from the server.
+  users_admin:
+    - usr: alice
+      pass: '$6$SL0ZpIASbYfb$7Za.Vr6MSP20n0326RmJuJ9DnMSfYcEf0EmqSJIwZVHren8jBatymCcwwB0SIb/WRDk6yluuddBPOc0ZrDZtR/'
+      key: 'ssh-rsa AAAA...123A alice@example.com'
+
+  users_normal:
+    - usr: bob
+      key: 'ssh-rsa AAAA...123B bob@example.com'
+
+# Old users to delete
+# List of usernames
+  users_deleted:
+    - dan

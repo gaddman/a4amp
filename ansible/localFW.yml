@@ -1,0 +1,16 @@
+---
+# Update the firewall locally
+
+- hosts: localhost
+  connection: local
+
+  vars:
+    rebuildFW: true		# rebuild FW rule by rule, rather than copying the rules files
+  vars_files:
+    - vars/firewall.yml
+
+  tasks:
+    - import_tasks: tasks/firewall.yml
+
+  handlers:
+    - import_tasks: handlers/main.yml

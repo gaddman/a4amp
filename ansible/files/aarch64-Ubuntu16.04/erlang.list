@@ -1,0 +1,3 @@
+# No arm64 packages from Erlang, so this is just a dummy file.
+# The install will use the Ubuntu packaged file
+# deb http://packages.erlang-solutions.com/debian jessie contrib

@@ -1,0 +1,2 @@
+# Shouldn't be required for 18.04 assuming new packages in main
+#deb http://www.rabbitmq.com/debian/ testing main

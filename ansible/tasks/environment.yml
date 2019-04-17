@@ -1,0 +1,107 @@
+---
+# Set up basic OS services and environment
+
+# Update the /etc/hosts file
+  - name: Set /etc/hosts file
+    template:
+      src: templates/hosts.{% if 'probes' in group_names %}probes{% else %}endpoints{% endif %}
+      dest: /etc/hosts
+    become: true
+  
+# Set hostname
+# This is a custom variable, set in the main playbook
+  - name: Set hostname
+    hostname:
+      name: "{{ hostname }}"
+    become: true
+ 
+# NTP for local servers
+  - name: NTP config
+    copy:
+      src: files/{{ ansible_architecture }}-{{ ansible_distribution }}{{ ansible_distribution_version }}/ntp.conf
+      dest: /etc/ntp.conf
+    become: true
+    notify: Restart NTP
+
+# Telegraf stats collection
+  - name: Telegraf config <endpoints>
+    template:
+      src: templates/telegraf.conf
+      dest: /etc/telegraf/telegraf.conf
+    when: "'endpoints' in group_names"
+    become: true
+    notify: Restart Telegraf
+
+# TCP tuning parameters
+  - name: TCP tuning
+    copy:
+      src: files/50-tuning.conf
+      dest: /etc/sysctl.d/50-tuning.conf
+    when: "ansible_architecture == 'x86_64'"
+    become: true
+
+# Syslog (for command logging)
+  - name: Syslog config
+    template:
+      src: templates/90-commands.conf
+      dest: /etc/rsyslog.d/90-commands.conf
+    become: true
+
+# Tell APT to do auto updates, upgrades and removal
+  - name: APT auto-upgrade
+    copy:
+      src: files/{{ ansible_architecture }}-{{ ansible_distribution }}{{ ansible_distribution_version }}/{{ item }}
+      dest: /etc/apt/apt.conf.d/{{ item }}
+    loop:
+     - 10periodic
+     - 20auto-upgrades
+     - 50unattended-upgrades
+    become: true
+
+# SSH config
+  - name: SSH keepalive
+    lineinfile:
+      dest: /etc/ssh/sshd_config
+      line: "ClientAliveInterval 90"
+    become: true
+
+# Set MOTD
+  - name: Set MOTD
+    copy:
+      dest: '/etc/update-motd.d/05-probe-info'
+      mode: 0755
+      content: |
+        #!/bin/sh
+        echo
+        echo "Probe {{inventory_hostname}}  ==  {{access}}  ==  {{location}}  ==  {{hardware}}  ==  {{endpoint}}{{staticIP}}"
+    become: true
+
+# Bash environment - nested loop of files and users
+  - name: Bash environment
+    copy:
+      src: files/{{ item.0 }}
+      dest: /home/{{ item.1.usr }}/{{ item.0 }}
+    loop: "{{ ['.bashrc', '.profile', '.iftoprc'] | product(users_admin + users_normal)|list }}"
+    loop_control:
+      label: "file {{ item.0 }}, user {{ item.1.usr }}"
+    become: true
+
+# Add some commands to Bash history
+  - name: Bash history
+    lineinfile:
+      dest: ~/.bash_history
+      line: "{{ item }}"
+      create: yes
+    loop:
+      - cat /etc/default/probeid
+      - sudo service amplet2-client restart
+      - sudo tail -f /var/log/amplet2/amplet2.log
+      - cat /etc/amplet2/schedules/{{ inventory_hostname }}/fetched.sched
+      - sudo amp-throughput -d 2 --cacert /etc/amplet2/keys/{{ server.collector }}.pem --cert /etc/amplet2/keys/{{ inventory_hostname }}/{{ server.collector }}.cert --key /etc/amplet2/keys/{{ inventory_hostname }}/key.pem -- {{ location2endpoint[0][location] | default(location2endpoint[0].default) }}
+      - wget --report-speed=bits -O /dev/null http://{{ location2endpoint[0][location] | default(location2endpoint[0].default) }}/50MB.bin
+      - iperf3 -R -c {{ location2endpoint[0][location] | default(location2endpoint[0].default) }}
+      - speedtest {{ ooklaServers }} --socket
+      - web100clt -n ndt-iupui-mlab1-akl01.measurement-lab.org
+      - mtr -rwbc5 www.trademe.co.nz
+      - curl ipboomhauer.com
+      - sudo tcpdump -i {{ ansible_default_ipv4.interface }} port not ssh

@@ -1,0 +1,21 @@
+.arial {font-family:Arial;}
+.arialblack {font-family:Arial Black;}
+.couriernew {font-family:Courier New;}
+.timesnewroman {font-family:Times New Roman;}
+.verdana {font-family:Verdana;}
+
+/* Dummy CSS */
+.hugo a:hover,.hugo #ticker .text a:focus,.hugo #story .readMore a:hover{text-decoration:underline;}
+.hugo #story .readMore a{color:#556da6!important;-webkit-font-smoothing:antialiased;}
+.hugo #story .readMore a:focus{padding:0;background:#fff;text-decoration:underline;}
+.hugo a img{border:0;}.hugo #wrapper{margin-left:25px;width:800px;position:relative;}
+.hugo .griditem h2:focus,.hugo .griditem h2:focus{top:auto;left:0;bottom:0;font-size:.938em;font-weight:bold;padding:5px 6px;background:#FEFEFE;color:#556DA6;border:3px solid #556DA6;z-index:20;text-decoration:none!important;overflow:visible;outline:none;}
+.hugo #story .griditem h2:focus{font-size:.938em;line-height:2.2em;margin-bottom:0;bottom:7px;}
+.hugo .griditem.colsize256 h2:focus,.hugo .griditem.colsize256 h2:focus{width:238px;}
+.hugo .griditem.colsize327 h2:focus,.hugo .griditem.colsize327 h2:focus{width:299px;}
+.hugo .griditem.versionpicto h2:focus,.hugo .griditem.versionpicto h2:focus{padding-top:8px;height:39px;}
+.hugo #header{position:relative;height:220px;z-index:200;}.hugo #orfonTarget{position:absolute;top:22px;left:84px;}
+.hugo #networknavigation{position:absolute;top:77px;background:#4372a3;height:27px;width:200%;font-size:22px;-webkit-font-smoothing:antialiased;}
+.hugo #networknavigation a{font-weight:normal;}.hugo #networknavigation li{float:left;display:inline;padding:6px 27px 7px 23px;}
+.hugo #content{background:#fff;position:relative;_position:static;}.hugo.news #content.front{background:#5d8dc5;}
+.hugo #networknavigation #sitemapMenu{padding-right:25px;position:absolute;right:0;}

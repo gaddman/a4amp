@@ -1,0 +1,78 @@
+---
+# Set up firewall using UFW
+# if passed the variable rebuildFW then it will build rule by rule. Otherwise simply copy the existing ruleset from the server
+
+# BUG
+# 2019-03-19: There's a problem with disabling/enabling UFW, see https://askubuntu.com/a/1064533 for details.
+# Workaround is to set /proc/sys/net/netfilter/nf_conntrack_tcp_be_liberal=1 on a couple of hosts first
+# (one probe, one endpoint). Watch that answer, and if no progress then probably best to add workaround as a task.
+# Assume the implications of the workaround aren't too problematic, since it used to work fine.
+
+# Copy prebuilt ruleset from server (set of files for probes, different set for endpoints)
+  - name: Firewall - load rules
+    copy:
+      src: files/firewall/{{item}}.{% if "probes" in group_names %}probes{% else %}endpoints{% endif %}
+      dest: /etc/ufw/{{item}}
+    loop:
+     - user.rules
+     - user6.rules
+    when: "not rebuildFW"
+    become: true
+    notify: Reload firewall
+
+# Apart from the enable task, all tasks below apply when rebuilding the FW, ie you've added/deleted a rule
+
+# Reset rules to ensure only rules below are in place
+  - name: Firewall - reset rules
+    ufw:
+      state: reset
+    when: "rebuildFW"
+    become: true
+
+# Probes and endpoints only (also applies to this server)
+  - name: Firewall - probe and endpoint rules
+    ufw:
+      rule: allow
+      from_ip: "{{ item.ip }}"
+      comment: "{{ item.txt }}"
+    loop: "{{ firewall.all }}"
+    when: "rebuildFW"
+    become: true
+
+# Probes only
+  - name: Firewall - probe-specific rules
+    ufw:
+      rule: allow
+      from_ip: "{{ item.ip }}"
+      comment: "{{ item.txt }}"
+    loop: "{{ firewall.probes }}"
+    when: "rebuildFW and 'probes' in group_names"
+    become: true
+
+# Endpoints only (also applies to this server)
+  - name: Firewall - endpoint-specific rules
+    ufw:
+      rule: allow
+      from_ip: "{{ item.ip }}"
+      comment: "{{ item.txt }}"
+    loop: "{{ firewall.endpoints }}"
+    when: "rebuildFW and ('endpoints' in group_names or inventory_hostname=='localhost')"
+    become: true
+
+# Enable firewall. Assuming default policy is Default: deny (incoming), allow (outgoing), disabled (routed)
+  - name: Firewall - enable
+    become: true
+    ufw:
+      state: enabled
+
+# Copy applied firewall ruleset back to server (firewall must be enabled). This only needs to be run once for each group, but that's tricky. TODO
+  - name: Firewall - copy ruleset back to server
+    fetch:
+      src: /etc/ufw/{{item}}
+      dest: files/firewall/{{item}}.{% if "probes" in group_names %}probes{% else %}endpoints{% endif %}
+      flat: true
+    loop:
+     - user.rules
+     - user6.rules
+    when: "rebuildFW and inventory_hostname!='localhost'"
+    become: true

@@ -1,0 +1,12 @@
+[Unit]
+Description=Rate limit network interface
+After=network.target
+
+[Service]
+Type=simple
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/ratelimit start
+ExecStop=/usr/local/bin/ratelimit stop
+
+[Install]
+WantedBy=multi-user.target

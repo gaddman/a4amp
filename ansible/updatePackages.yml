@@ -1,0 +1,70 @@
+---
+- hosts: endpoints:probes
+  strategy: free
+
+  vars_files:
+    - vars/main.yml
+
+  vars_prompt:
+   - name: upgradeList
+     prompt: " (1) Upgrade just Amplet and other required packages\n
+               (2) Everything (dangerous without testing!)\n
+               (3) Amplet from testing\n
+               (4) Ubuntu distribution upgrade (definitely don't do unless tested thoroughly!!!)\n-->"
+     private: no
+
+  tasks:
+    - name: Install required packages
+      include_tasks: tasks/packages.yml
+      when: "upgradeList|int == 1"
+
+    - name: Install all latest packages
+      when: "upgradeList|int == 2"
+      apt:
+        upgrade: dist
+        autoremove: yes
+        update_cache: true
+      become: true
+
+    - name: Install test Amplet package
+      when: "upgradeList|int == 3"
+      apt: deb={{item}}
+      loop:
+        # - https://wand.net.nz/~brendonj/amp/amd64/xenial/amplet2-chromium-libs_0.8.2-2_{{ {'aarch64':'arm64.deb', 'armv7l':'arm.deb', 'x86_64':'amd64.deb'}[ansible_architecture] }}"
+        - https://wand.net.nz/~brendonj/amp/amd64/xenial/amplet2-client_0.8.2-1~rc4_{{ {'aarch64':'arm64.deb', 'armv7l':'arm.deb', 'x86_64':'amd64.deb'}[ansible_architecture] }}
+      become: true
+      notify: Restart Amplet
+
+# Ubuntu upgrade is a 4 step process
+    - name: Set dpkg option to install new config files
+      when: upgradeList|int == 4 and ansible_distribution_major_version == '16'
+      lineinfile:
+        path: /etc/dpkg/dpkg.cfg
+        line: force-confnew
+        state: present
+      become: true
+
+    - name: Perform release upgrade
+      when: upgradeList|int == 4 and ansible_distribution_major_version == '16'
+      command: /usr/bin/do-release-upgrade -f  DistUpgradeViewNonInteractive
+      become: true
+
+    - name: Unset dpkg option to install new config files
+      when: upgradeList|int == 4 and ansible_distribution_major_version == '16'
+      lineinfile:
+        path: /etc/dpkg/dpkg.cfg
+        line: force-confnew
+        state: absent
+      become: true
+
+    - name: Reboot
+      when: upgradeList|int == 4 and ansible_distribution_major_version == '16'
+      reboot:
+      become: true
+
+      # Import required tasks from the main build playbook
+    - import_tasks: tasks/packages.yml
+      when: upgradeList|int == 4 and ansible_distribution_major_version == '16'
+
+  handlers:
+    - import_tasks: handlers/main.yml

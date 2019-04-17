@@ -1,0 +1,20 @@
+---
+# Firewall rules
+# IPv4 and IPv6, for probes and endpoints
+# This server will use the endpoint rules
+
+  firewall:
+    # Probes only
+    probes:
+      # LAN ranges are included for local troubleshooting
+      - { ip: 10.0.0.0/8, txt: LAN traffic }
+      - { ip: 172.16.0.0/12, txt: LAN traffic }
+      - { ip: 192.168.0.0/16, txt: LAN traffic }
+      - { ip: 'fe80::/64', txt: LAN traffic }
+    # Probes, endpoints and the management server
+    all:
+      - { ip: "{{ tunnel.ip }}", txt: 'Management server' } # Not strictly required on probes since reverse tunnels are in place, but handy for those with static IPs
+    # Endpoints and the management server only
+    # Include all the IP ranges where the probes may reside
+    endpoints:
+      - { ip: 203.0.113.0/24, txt: Example IP range }

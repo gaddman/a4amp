@@ -1,0 +1,42 @@
+---
+# Update kernel from 4.15.0-36.39 to 4.15.0-37.40 to fix regression
+# See https://bugs.launchpad.net/ubuntu/+source/linux/+bug/1795564 for status
+- hosts: probes:endpoints
+  strategy: free
+
+  tasks:
+    # Add new sources
+    - name: Add APT sources and adjust priority
+      copy:
+        src: files/{{ ansible_architecture }}-{{ ansible_distribution }}{{ ansible_distribution_version }}/{{item.src}}
+        dest: "{{item.dest}}"
+      loop:
+       - { src: 'proposed.list', dest: '/etc/apt/sources.list.d/proposed.list' }
+       - { src: 'proposed', dest: '/etc/apt/preferences.d/proposed' }
+      when: "ansible_distribution == 'Ubuntu' and ansible_distribution_major_version == '18' and ansible_architecture == 'x86_64'"
+      become: true
+
+    # Since new source was just added, it seems an APT update is required as a separate step
+    - name: APT update
+      apt:
+        update_cache: yes
+      when: "ansible_distribution == 'Ubuntu' and ansible_distribution_major_version == '18' and ansible_architecture == 'x86_64'"
+      become: true
+
+      # Install new kernel
+    - name: Install new kernel
+      apt:
+        name:
+          - linux-generic
+          - linux-headers-generic
+        default_release: bionic-proposed
+        state: latest
+      when: "ansible_distribution == 'Ubuntu' and ansible_distribution_major_version == '18' and ansible_architecture == 'x86_64'"
+      become: true
+      register: newkernel
+
+    # Reboot
+    - name: Reboot
+      reboot:
+      when: newkernel.changed
+      become: true

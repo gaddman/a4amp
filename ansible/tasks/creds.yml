@@ -1,0 +1,122 @@
+---
+# Set up users, passwords and SSH keys
+
+# allow probes to sudo without password
+  - name: Allow sudo commands
+    copy:
+      src: files/{{ ansible_architecture }}-{{ ansible_distribution }}{{ ansible_distribution_version }}/sudoers
+      dest: /etc/sudoers
+    become: true
+#    notify: Restart sudo
+
+# Create users and passwords
+  - name: Create admin user & set password
+    user:
+      name: "{{ item.usr }}"
+      password: "{{ item.pass }}"
+      shell: /bin/bash
+    loop: "{{ users_admin }}"
+    loop_control:
+      label: "{{ item.usr }}"
+    become: true
+  - name: Create operational group
+    group: name=ops
+    become: true
+  - name: Create operational users with no password (SSH key login only)
+    user:
+      name: "{{ item.usr }}"
+      group: ops
+      groups:
+      shell: /bin/bash
+      password_lock: yes
+    loop: "{{ users_normal }}"
+    loop_control:
+      label: "{{ item.usr }}"
+    become: true
+
+# Delete old users, including the home folder
+  - name: Delete old users
+    user:
+      name: "{{ item }}"
+      state: absent
+      remove: yes
+    loop: "{{ users_deleted }}"
+    become: true
+
+# Check if GUI installed
+  - name: Check GUI install
+    stat:
+      path: /etc/lightdm/lightdm.conf.d
+    register: lightdmCheck
+
+# Disable guest access (GUI only)
+  - name: Disable guest login
+    copy:
+      src: files/{{ ansible_architecture }}-{{ ansible_distribution }}{{ ansible_distribution_version }}/50-no-guest.conf
+      dest: /etc/lightdm/lightdm.conf.d/50-no-guest.conf
+    when: lightdmCheck.stat.exists
+    become: true
+
+
+# Allow passwordless login to the probe, for each user
+  - name: Add server SSH key
+    authorized_key:
+      user: "{{ item.usr }}"
+      key: "{{ item.key }}"
+      exclusive: yes
+    loop: "{{ users_admin + users_normal }}"
+    loop_control:
+      label: "{{ item.usr }}"
+    become: true
+
+# Force generation of new SSH keys by passing variable: --extra-vars "rotateSSH=true"
+# Generate new host key. Update this if https://github.com/ansible/ansible/issues/23439 gets resolved (v2.8)
+# or use the openssh_keypair module from v2.8
+  - name: Generate SSH ECDSA key
+    shell: "echo y | ssh-keygen -t ecdsa -C {{ hostname }} -N '' -f /etc/ssh/ssh_host_ecdsa_key"
+    when: rotateSSH
+    become: true
+
+# # Generate SSH host key for the tunnel (this module from Ansible version 2.8)
+  # - name: Generate SSH ECDSA key
+    # openssh_keypair:
+      # path: /etc/ssh/ssh_host_ecdsa_key
+      # comment: "{{ inventory_hostname }}"
+      # force: yes
+      # force: "{{ rotateSSH }}"
+    # when: rotateSSH
+    # become: true
+
+# copy SSH host key to server
+  - name: Backup SSH ECDSA key
+    fetch:
+      src: /etc/ssh/ssh_host_ecdsa_key.pub
+      dest: "{{ keyDir }}/{{ inventory_hostname }}-ssh_host_ecdsa_key.pub"
+      flat: yes
+
+# Add SSH host key to server's known_hosts (need to ignore checks initially via cmdline arg)
+  - name: Add SSH ECDSA key to known_hosts <probes>
+    known_hosts:
+      key: "[localhost]:2{{ item }} {{ lookup('file', '{{ keyDir }}/{{ item }}-ssh_host_ecdsa_key.pub') }}"
+      name: "[localhost]:2{{ item }}"
+      path: "{{ keyDir }}/known_hosts"
+    connection: local
+    run_once: true
+    loop: "{{ ansible_play_hosts }}"
+    when: "'probes' in hostvars[item]['group_names']"
+    notify: Chmod SSH known_hosts
+
+  - name: Add SSH ECDSA key to known_hosts <endpoints>
+    known_hosts:
+      key: "{{ item }} {{ lookup('file', '{{ keyDir }}/{{ item }}-ssh_host_ecdsa_key.pub') }}"
+      name: "{{ item }}"
+      path: "{{ keyDir }}/known_hosts"
+    connection: local
+    run_once: true
+    loop: "{{ ansible_play_hosts }}"
+    when: "'endpoints' in hostvars[item]['group_names']"
+    notify: Chmod SSH known_hosts
+
+# Run the chmod SSH known_hosts now, in case a task fails later and the playbook stops
+  - name: Chmod SSH known_hosts file
+    meta: flush_handlers

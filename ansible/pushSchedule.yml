@@ -1,0 +1,63 @@
+---
+# Download schedule to all the probes, replacing dummy endpoints with real.
+# Fact gathering is off so that all schedules are downloaded & tweaked, even if probe is offline
+- hosts: probes:endpoints
+  gather_facts: false
+
+  vars_files:
+    - vars/main.yml
+
+
+  tasks:
+    # This task was timing out because it was hitting the webserver (or database) too quickly, increased from default of 10 to 20.
+    # Get original schedule with placeholder names
+    - name: Retrieve probe schedule
+      connection: local
+      get_url:
+        url: 'https://{{ server.schedules }}/yaml/{{ inventory_hostname }}'
+        dest: '{{schedDir}}/{{ inventory_hostname }}.original'
+        force: yes
+        timeout: 20
+
+    # create a copy of the schedule so we have the original available if needed
+    - name: Create copy of schedule
+      connection: local
+      command: cp "{{schedDir}}/{{ inventory_hostname }}.original" "{{schedDir}}/{{ inventory_hostname }}.schedule"
+      changed_when: False
+
+    # Replace dummy endpoints with real endpoint, based on the location
+    - name: Replace dummy location-based endpoints <probes>
+      connection: local
+      replace:
+        path: '{{schedDir}}/{{ inventory_hostname }}.schedule'
+        regexp: '{{item.regex}}'
+        replace: '{{ item[location] | default(item.default) }}'
+      loop: '{{ location2endpoint }}'
+      loop_control:
+        label: '{{ item.label }} ({{ item.regex }} -> {{ item[location] | default(item.default) }})'
+      when: "'probes' in group_names"
+      changed_when: False
+
+    # Replace dummy endpoints with real endpoint, based on probe
+    - name: Replace dummy probe-specific endpoints <probes>
+      connection: local
+      replace:
+        path: '{{schedDir}}/{{ inventory_hostname }}.schedule'
+        regexp: '{{ item.regex }}'
+        replace: '{{ endpoint | default(item.default,true) }}'
+      loop: '{{ probe2endpoint }}'
+      loop_control:
+        label: '{{ item.label }} ({{ item.regex }} -> {{ endpoint | default(item.default,true) }})'
+      when: "'probes' in group_names"
+      changed_when: False
+
+      # Download schedule to each probe
+    - name: Download schedule to probe
+      become: true
+      copy:
+        src: '{{schedDir}}/{{ inventory_hostname }}.schedule'
+        dest: "/etc/amplet2/schedules/{{ inventory_hostname }}/fetched.sched"
+      notify: Restart Amplet
+
+  handlers:
+    - import_tasks: handlers/main.yml

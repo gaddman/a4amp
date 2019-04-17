@@ -1,0 +1,18 @@
+[Unit]
+Description=SSH tunnel to controlling server
+Documentation=man:ssh(1)
+Wants=ssh-agent.service
+After=network.target ssh.service
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/default/probeid
+ExecStart=/usr/bin/ssh -N -R 2${id}:localhost:22 \
+    -o ServerAliveInterval=90 -o ExitOnForwardFailure=yes \
+    -i /etc/ssh/ssh_host_rsa_key tunnel@{{ tunnel.IP }}
+# If this exits then the tunnel has died, so restart
+RestartSec=60
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

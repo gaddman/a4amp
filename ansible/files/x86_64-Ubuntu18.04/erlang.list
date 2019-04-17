@@ -1,0 +1,2 @@
+#Not required for 18.04 since new enough packages are in main
+#deb http://packages.erlang-solutions.com/debian jessie contrib

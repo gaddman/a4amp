@@ -1,0 +1,108 @@
+---
+# Variables for Ansible playbooks and scripts
+
+  # Server addresses
+  server:
+    # rabbitMQ destination for test results
+    collector: amp.example.com
+    # Download of YAML schedules
+    schedules: amp.example.com
+    # Additional endpoint stats InfluxDB
+    stats: amp.example.com
+    # Syslog receiver for probe command log
+    syslog: amp.example.com
+
+  # RabbitMQ settings
+  # Use a local RabbitMQ server to cache results on probe
+  useRabbit: true
+  # Preferred RabbitMQ port
+  rabbitPort: 5671
+
+  # SSH tunnel endpoint for probes
+  tunnel:
+    # IP address (should be the address of this server)
+    IP: 203.0.113.5
+    # Fingerprint (output of `ssh-keyscan -t ecdsa` against the above IP address)
+    key: "203.0.113.5 ecdsa-sha2-nistp256 AAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBLmw2JjbKMO5LXTcJ67et6TBZeLff1WghM6koKjiHGh+gBbZzHrhDj20MuTxTB1kaTYh7f9T2G/zmhVpFMyUUoQ="
+
+  # Server directories
+  # Storing test schedules
+  schedDir: /home/amp/a4amp/schedules
+  # Storing probe SSH public keys
+  keyDir: /home/amp/a4amp/keys
+
+  # email notifications
+  email:
+    recipients: notify@example.com
+    server: smtp.example.com
+    user: amp@example.com
+    password: secret
+    reply: amp@example.com
+
+  # Failsafe script is executed once every week as root
+  # If connection to this server is lost then use to recover probes
+  failsafe: http://198.51.100.1/amp/failsafe.sh
+  # Suggested content:
+    # !/bin/sh
+    # # Failsafe script for AMP probes
+    # touch /tmp/failsafeOK
+
+  # Custom packages URL
+  # Base URL where custom packages are located (no trailing slash)
+  packagesURL: http://amp.example.com/packages
+
+  # Preferred speedtest servers
+  # Command line flags to use with speedtest.py (or leave blank)
+  ooklaServers: --server 4954
+
+  # Endpoints - dummy replacements
+  # 'label' is used in the Ansible output for a more meaningful display
+  # 'regex' is the text that will be replaced, and should match the sitename in AMPweb
+  # 'default' is the endpoint used if a location hasn't been set
+  # One or more probe-specific mappings
+  probe2endpoint:
+    - label: BNG
+      regex: dummy-bng-nearest
+      default: akl.amp.vodafone.co.nz
+  # One or more mappings from location to and endpoint
+  # Default from the first one in the list is used for speedtests
+  location2endpoint:
+    # Edge endpoint mapped according to location
+    - label: Edge
+      regex: dummy-edge-nearest
+      default: chc.amp.vodafone.co.nz
+      'Northland': akl.amp.vodafone.co.nz
+      'Auckland': akl.amp.vodafone.co.nz
+      'Waikato': akl.amp.vodafone.co.nz
+      'Bay of Plenty': akl.amp.vodafone.co.nz
+      'Gisborne': akl.amp.vodafone.co.nz
+      "Hawke's Bay": akl.amp.vodafone.co.nz
+      'Taranaki': akl.amp.vodafone.co.nz
+      'Manawatu-Wanganui': wlg.amp.vodafone.co.nz
+      'Wellington': wlg.amp.vodafone.co.nz
+      'Tasman': wlg.amp.vodafone.co.nz
+      'Nelson': wlg.amp.vodafone.co.nz
+      'Marlborough': wlg.amp.vodafone.co.nz
+      'West Coast': chc.amp.vodafone.co.nz
+      'Canterbury': chc.amp.vodafone.co.nz
+      'Otago': chc.amp.vodafone.co.nz
+      'Southland': chc.amp.vodafone.co.nz
+
+  # Probe groups
+  # Group name, regex and variables used for creating Ansible groups
+  # Useful for output of the 'probes' command and running ad-hoc Ansible commands
+  # The regex will match the probe name, location or any of extra data.
+  # Format is one of the following:
+  #   'groupname': 'regex match'
+  #   'groupname': ['regex match', vars]
+  # eg, to set python version for all probes:
+  #   'all': ['', ansible_python_interpreter=/usr/bin/python3]
+  ansibleGroups:
+    'Fixed': 'DSL|UFB'
+    'Edge': '^internet'
+    'Auckland': 'Auckland'
+    'Wellington': 'Wellington'
+    'Canterbury': 'Canterbury'
+    'HW-NUC': 'NUC'
+    'HW-Odroid': 'Odroid'
+    'all': ['', ansible_python_interpreter=/usr/bin/python3]

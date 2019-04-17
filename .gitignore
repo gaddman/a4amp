@@ -1,0 +1,17 @@
+# Files/folders that we don't want to publish to the git repository
+# eg because they are sensitive or uninteresting log files
+
+# SSH keys
+keys/
+
+# probe schedules
+schedules/
+
+# firewall rules
+ansible/files/firewall/
+
+# config
+ansible/vars/*.yml
+
+# custom tasks
+ansible/tasks/custom.yml

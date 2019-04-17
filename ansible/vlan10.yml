@@ -1,0 +1,29 @@
+---
+# Add or remove vlan 10 to probe, for direct connection to ONT or cable modem
+
+- hosts: endpoints:probes
+
+  vars_prompt:
+   - name: targetState
+     prompt: " (1) Add VLAN10 interface\n
+               (2) Remove VLAN10 interface\n-->"
+     private: no
+
+  tasks:
+
+  - name: Add VLAN 10 interface
+    nmcli:
+      conn_name: vlan10
+      type: vlan
+      state: present
+      vlandev: "{{ansible_default_ipv4.interface}}"
+      vlanid: 10
+    become: true
+    when: "targetState|int == 1"
+
+  - name: Remove VLAN 10 interface
+    nmcli:
+      conn_name: vlan10
+      state: absent
+    become: true
+    when: "targetState|int == 2"

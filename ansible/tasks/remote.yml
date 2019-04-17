@@ -1,0 +1,121 @@
+---
+# Set up remote control of the probe - SSH keys and cron jobs
+
+# Set the probe ID
+  - name: Set probe ID
+    copy:
+      dest: /etc/default/probeid
+      content: |
+        # Probe ID for SSH tunnel
+        id={{ inventory_hostname }}
+    become: true
+
+# Deploy the auto SSH tunnel back to management server (systemd hosts)
+  - name: Deploy tunnel service (systemd)
+    template:
+      src: templates/ssh_tunnel.service
+      dest: /etc/systemd/system/ssh_tunnel.service
+    when: "ansible_distribution == 'Ubuntu' and ansible_distribution_major_version >= '16'"
+    become: true
+
+# Deploy the auto SSH tunnel back to management server (upstart hosts)
+  - name: Deploy tunnel service (upstart)
+    template:
+      src: templates/ssh_tunnel.conf
+      dest: /etc/init/ssh_tunnel.conf
+    when: "ansible_distribution == 'Ubuntu' and ansible_distribution_major_version < '16'"
+    become: true
+
+# Enable the service for the SSH tunnel (all hosts)
+  - name: Enable tunnel service
+    service:
+      name: ssh_tunnel
+      enabled: yes
+      state: started
+    become: true
+
+# Add server fingerprint to known hosts
+  - name: Add server fingerprint
+    known_hosts:
+      path: /etc/ssh/ssh_known_hosts
+      name: "{{ tunnel.IP }}"
+      key: "{{ tunnel.key }}"
+    become: true
+
+# Set cron for daily reboot (this will fail if cron not installed like on minimal install)
+  - name: Set cron job for reboot
+    cron:
+      name: Reboot device
+      user: root
+      hour: 4
+      minute: 0
+      job: /sbin/reboot
+    become: true
+
+# Set cron for failsafe (this will fail if cron not installed like on minimal install)
+  - name: Set cronjob for failsafe
+    cron:
+      name: Failsafe script
+      user: root
+      # weekday: 1
+      hour: 7
+      minute: 0
+      job: wget -O - {{ failsafe }} | bash
+    become: true
+
+# Force generation of new probe SSH keys by passing variable: --extra-vars "rotateSSH=true"
+
+# 1. Get existing key as backup.
+  - name: Backup current SSH RSA key
+    fetch:
+      src: /etc/ssh/ssh_host_rsa_key.pub
+      dest: "{{ keyDir }}/{{ inventory_hostname }}-ssh_host_rsa_key.pub.{{ ansible_date_time.date }}"
+      flat: yes
+    when: rotateSSH
+
+# 2. Generate new host key. Update this if https://github.com/ansible/ansible/issues/23439 gets resolved (v2.8)
+#    or use the openssh_keypair module from v2.8
+  - name: Generate new SSH RSA key
+    shell: "echo y | ssh-keygen -t rsa -C {{ hostname }} -N '' -f /etc/ssh/ssh_host_rsa_key"
+    when: rotateSSH
+    become: true
+
+# # Generate SSH host key for the tunnel (this module from Ansible version 2.8)
+  # - name: Generate new SSH key pair
+    # openssh_keypair:
+      # path: /etc/ssh/ssh_host_rsa_key
+      # comment: "{{ hostname }}"
+      # force: yes
+      # force: "{{ rotateSSH }}"
+    # when: rotateSSH
+    # become: true
+
+# copy SSH key to server
+  - name: Backup SSH RSA key
+    fetch:
+      src: /etc/ssh/ssh_host_rsa_key.pub
+      dest: "{{ keyDir }}/{{ inventory_hostname }}-ssh_host_rsa_key.pub"
+      flat: yes
+ 
+# Add SSH key to authorized keys
+# The authorized_key module with user=tunnel would require sudo for this user, so instead write to file and use a handler to copy across with allowed sudo command
+# authorized_key module doesn't lock file which is a problem when running against multiple hosts (some keys aren't added).
+# Workaround is to run once, but against all items (forces it to run serially). See https://github.com/ansible/ansible/issues/12170
+# Will be resolved once PR https://github.com/ansible/ansible/pull/42528 is merged (v2.9)
+
+  - name: Add SSH RSA key to server's authorized_keys
+    authorized_key:
+      user: "{{ ansible_user }}"
+      key_options: no-pty,command="/bin/echo Access denied"
+      key: "{{ lookup('file', '{{ keyDir }}/{{ item }}-ssh_host_rsa_key.pub').split()[:2] | join(' ') }}"
+      comment: probe{{ item }}
+      path: "{{ keyDir }}/authorized_keys"
+      manage_dir: no
+    connection: local
+    run_once: true
+    loop: "{{ ansible_play_hosts }}"
+    notify: Update SSH keyfile
+
+# Run the copy SSH keys now, in case a task fails later and the playbook stops
+  - name: Copy SSH keyfile to tunnel user
+    meta: flush_handlers

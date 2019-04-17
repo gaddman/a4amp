@@ -1,0 +1,58 @@
+---
+# Set up webserver with required files and config
+
+# Create files on the endpoint servers
+  - name: Create download test files
+    command: /usr/bin/truncate -s {{item}} /var/www/html/{{item}}B.bin
+    args:
+      creates: /var/www/html/{{item}}B.bin
+    loop:
+      - 100K
+      - 500K
+      - 1M
+      - 5M
+      - 10M
+      - 50M
+      - 100M
+      - 500M
+    become: true
+
+# ETSI test pages (first download from https://portal.etsi.org/tbsitemap/stq/htlmreferencewebpage.aspx and extract locally)
+  - name: Deploy ETSI pages
+    synchronize:
+      src: files/{{item}}/
+      dest: /var/www/html/{{item}}/
+    loop:
+      - kepler_for_smartphones
+      - kepler_html_iframe_includes_first
+    become: true
+
+# Delete Apache index.html (to allow directory listing)
+  - name: Delete index.html
+    file:
+      path: /var/www/html/index.html
+      state: absent
+    become: true
+
+# Deploy Apache uploads script
+  - name: Deploy upload script
+    copy:
+      src: files/server_upload.php
+      dest: /var/www/html/server_upload.php
+    become: true
+
+# Enable uploads
+  - name: Enable PHP uploads
+    apache2_module:
+      name: actions
+      state: present
+    become: true
+    notify: Restart Apache
+
+# Apache config
+  - name: Deploy default config
+    template:
+      src: templates/000-default.conf
+      dest: /etc/apache2/sites-available/000-default.conf
+    become: true
+    notify: Restart Apache

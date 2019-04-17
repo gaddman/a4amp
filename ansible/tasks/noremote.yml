@@ -1,0 +1,53 @@
+---
+# Remove remote control of a probe (for a device moved from probe to endpoint)
+
+# Disable the systemd service for the SSH tunnel
+  - name: Disable tunnel service
+    service:
+      name: ssh_tunnel
+      enabled: no
+      state: stopped
+    become: true
+    ignore_errors: true
+
+# Remove the auto SSH tunnel service (systemd hosts)
+  - name: Remove tunnel service (systemd)
+    file:
+      dest: /etc/systemd/system/ssh_tunnel.service
+      state: absent
+    become: true
+    when: "ansible_distribution == 'Ubuntu' and ansible_distribution_major_version >= '16'"
+
+# Remove the auto SSH tunnel service (upstart hosts)
+  - name: Remove tunnel service (upstart)
+    file:
+      dest: /etc/init/ssh_tunnel
+      state: absent
+    become: true
+    when: "ansible_distribution == 'Ubuntu' and ansible_distribution_major_version < '16'"
+
+# Remove probe ID
+  - name: Remove probe ID
+    file:
+      dest: /etc/default/probeid
+      state: absent
+    become: true
+
+# Change cron for reboot from daily to weekly (this will fail if cron not installed like on minimal install)
+  - name: Set cron job for reboot
+    cron:
+      name: Reboot device
+      user: root
+      weekday: 0
+      hour: 4
+      minute: 0
+      job: /sbin/reboot
+    become: true
+
+# Remove cron for failsafe
+  - name: Remove cronjob for failsafe
+    cron:
+      name: Failsafe script
+      user: root
+      state: absent
+    become: true

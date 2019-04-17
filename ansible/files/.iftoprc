@@ -1,0 +1,6 @@
+dns-resolution:	no
+hide-source:	yes
+#use-bytes:	yes
+sort:		destination
+line-display:	one-line-received
+max-bandwidth:	100M

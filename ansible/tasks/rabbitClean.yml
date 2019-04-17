@@ -1,0 +1,64 @@
+---
+# Clean up old RabbitMQ data where a probe has been renumbered
+
+# Check for old data first. Use shell command because there isn't a suitable RabbitMQ module command
+  - name: Check for old RabbitMQ users
+    shell: "rabbitmqctl list_users | egrep -v '{{ inventory_hostname }}|guest|Listing'"
+    register: rabbitMQusers
+    changed_when: false
+    failed_when: false # grep gives an error=1 if no lines are found
+    become: true
+
+  - name: Check for old RabbitMQ vhosts
+    shell: "rabbitmqctl list_vhosts | egrep -v '{{ inventory_hostname }}|/|Listing'"
+    register: rabbitMQvhosts
+    changed_when: false
+    failed_when: false # grep gives an error=1 if no lines are found
+    become: true
+
+  - name: Check for old RabbitMQ parameters
+    shell: "rabbitmqctl list_parameters | egrep -v '{{ inventory_hostname }}|Listing'"
+    register: rabbitMQparameters
+    changed_when: false
+    failed_when: false # grep gives an error=1 if no lines are found
+    become: true
+
+# Remove the old RabbitMQ data
+  - name: Remove old RabbitMQ users
+    # take 1st field of an output like: "870  []"
+    rabbitmq_user:
+      user: "{{ item.split('\t')[0] }}"
+      state: absent
+    loop: "{{ rabbitMQusers.stdout_lines }}"
+    become: true
+
+  - name: Remove old RabbitMQ vhosts
+    rabbitmq_vhost:
+      vhost: "{{ item }}"
+      state: absent
+    loop: "{{ rabbitMQvhosts.stdout_lines }}"
+    become: true
+
+  - name: Remove old RabbitMQ parameters
+    # take 2nd field of an output like: shovel       870     {"src-uri":"amqp://870:870@localhost/870","s...
+    rabbitmq_parameter:
+      component: shovel
+      name: "{{ item.split('\t')[1] }}"
+      state: absent
+    loop: "{{ rabbitMQparameters.stdout_lines }}"
+    become: true
+
+  - name: Find old RabbitMQ keys
+    find:
+      paths: /etc/amplet2/keys
+      patterns: (?!{{ inventory_hostname }})
+      use_regex: true
+      file_type: directory
+    register: oldkey
+    become: true
+  - name: Delete old RabbitMQ keys
+    file:
+      path: "{{ item['path'] }}"
+      state: absent
+    loop: "{{ oldkey.files }}"
+    become: true

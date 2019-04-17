@@ -1,0 +1,4 @@
+# Increase priority of backports
+Package: *
+Pin: release a=jessie-backports
+Pin-Priority: 500

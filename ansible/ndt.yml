@@ -1,0 +1,42 @@
+---
+# Running NDT (Samknows/M-Lab Speedtests) on probes
+# Uses serial=2 to avoid overloading access network or test endpoints.
+# Alternatively, run with limited number of forks by passing -f2. This gives nicer output, but you need to wait until all tests are completed to see results.
+
+- hosts: probes:endpoints
+  serial: 2
+  gather_facts: false
+
+  vars:
+    location2node:
+      'Northland': 'ndt-iupui-mlab1-akl01.measurement-lab.org'
+      'Auckland': 'ndt-iupui-mlab1-akl01.measurement-lab.org'
+      'Waikato': 'ndt-iupui-mlab1-akl01.measurement-lab.org'
+      'Bay of Plenty': 'ndt-iupui-mlab1-akl01.measurement-lab.org'
+      'Gisborne': 'ndt-iupui-mlab1-akl01.measurement-lab.org'
+      "Hawke's Bay": 'ndt-iupui-mlab1-akl01.measurement-lab.org'
+      'Taranaki': 'ndt-iupui-mlab1-akl01.measurement-lab.org'
+      'Manawatu-Wanganui': 'ndt-iupui-mlab1-wlg02.measurement-lab.org'
+      'Wellington': 'ndt-iupui-mlab1-wlg02.measurement-lab.org'
+      'Tasman': 'ndt-iupui-mlab1-wlg02.measurement-lab.org'
+      'Nelson': 'ndt-iupui-mlab1-wlg02.measurement-lab.org'
+      'Marlborough': 'ndt-iupui-mlab1-wlg02.measurement-lab.org'
+      'West Coast': 'ndt-iupui-mlab1-wlg02.measurement-lab.org'
+      'Canterbury': 'ndt-iupui-mlab1-wlg02.measurement-lab.org'
+      'Otago': 'ndt-iupui-mlab1-wlg02.measurement-lab.org'
+      'Southland': 'ndt-iupui-mlab1-wlg02.measurement-lab.org'
+    destination: "{{ location2node[location | default(Southland)] }}"
+
+  tasks:
+    - name: Run NDT test
+      command: web100clt -n {{ destination }} --disablemid --disablesfw
+      register: results
+      ignore_unreachable: yes
+      ignore_errors: yes
+
+    - name: Print results
+      debug:
+        msg: Probe {{ inventory_hostname }}, {{ location }} location, testing to {{ destination[16:21] }}. 
+             Download {{ results.stdout_lines[2] | regex_replace('^.* ([0-9\.]+ .*)$','\1') }}, 
+             Upload {{ results.stdout_lines[1] | regex_replace('^.* ([0-9\.]+ .*)$','\1') }}
+      when: results.changed

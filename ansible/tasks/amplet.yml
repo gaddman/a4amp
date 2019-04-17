@@ -1,0 +1,62 @@
+---
+# SSL key for reporting server
+  - name: Amplet server key
+    copy:
+      src: "{{ keyDir }}/{{ server.collector }}.pem"
+      dest: /etc/amplet2/keys/{{ server.collector }}.pem
+    become: true
+    notify: Restart Amplet
+
+# Client config
+  - name: Set Amplet client config
+    template:
+      src: templates/amplet.conf
+      dest: /etc/amplet2/clients/{{ inventory_hostname }}.conf
+    become: true
+    notify: Restart Amplet
+
+# Find and delete other config files
+  - name: Find other Amplet client configs
+    # This uses a regex negative lookbehind to find any .conf files that don't match the hostname
+    find:
+      paths: /etc/amplet2/clients
+      patterns: '.*(?<!{{ inventory_hostname }})\.conf'
+      use_regex: true
+    register: oldconf
+  - name: Delete other Amplet client configs
+    file:
+      path: "{{ item['path'] }}"
+      state: absent
+    loop: "{{oldconf.files}}"
+    become: true
+    notify: Restart Amplet
+
+# Create directory for schedule to download to (only needed because we're pushing schedules manually)
+  - name: Create schedule folder
+    file:
+      path: /etc/amplet2/schedules/{{ inventory_hostname }}
+      state: directory
+      mode: 0755
+    become: true
+
+# Delete dud certificates. Sometimes the certs end up zero length files for some reason. Delete it if so (it'll recreate on restart)
+  - name: Check for invalid certificates
+    stat:
+      path: /etc/amplet2/keys/{{ inventory_hostname }}/{{ server.collector }}.cert
+    register: certfile
+    become: true
+  - name: Delete invalid certificates
+    file:
+      path: /etc/amplet2/keys/{{ inventory_hostname }}/{{ server.collector }}.cert
+      state: absent
+    when: certfile.stat.exists and certfile.stat.size == 0
+    become: true
+    notify: Restart Amplet
+
+# Custom RabbitMQ config. After an Erlang upgrade to v20.1-1 SNI was required.
+  - name: RabbitMQ config
+    template:
+      src: templates/rabbitmq.config
+      dest: /etc/rabbitmq/rabbitmq.config
+    become: true
+    notify: Restart RabbitMQ

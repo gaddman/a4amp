@@ -1,0 +1,40 @@
+---
+# All the handlers
+
+  - name: Restart sudo
+    service: name=sudo state=restarted
+    become: true
+
+  - name: Restart Amplet
+    service: name=amplet2-client state=restarted
+    become: true
+
+  - name: Restart RabbitMQ
+    service: name=rabbitmq-server state=restarted
+    become: true
+
+  - name: Restart NTP
+    service: name=ntp state=restarted
+    become: true
+
+  - name: Restart Apache
+    service: name=apache2 state=restarted
+    become: true
+
+  - name: Restart Telegraf
+    service: name=telegraf state=restarted
+    become: true
+
+  - name: Reload firewall
+    ufw: state=reloaded
+    become: true
+
+  - name: Update SSH keyfile
+    raw: sudo cp {{ keyDir }}/authorized_keys /home/tunnel/.ssh/authorized_keys
+    connection: local
+    run_once: true
+
+  - name: Chmod SSH known_hosts
+    file: path={{ keyDir }}/known_hosts mode=0644
+    connection: local
+    run_once: true

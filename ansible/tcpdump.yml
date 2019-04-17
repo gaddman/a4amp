@@ -1,0 +1,54 @@
+---
+# Playbook to get a packet capture from all of the endpoint servers and upload here. Probably don't want to run this witout specifying a limit.
+
+- hosts: endpoints:probes
+
+  vars:
+    capfile: "{{ inventory_hostname_short }}_{{ ansible_date_time['iso8601_basic_short'] }}.pcap"
+
+  vars_prompt:
+    - name: endpointfilter
+      prompt: "Enter capture filter for endpoint server (or enter for none)"
+      default: ""
+      private: no
+    - name: probefilter
+      prompt: "Enter capture filter for probe (or enter for none)"
+      default: ""
+      private: no
+    - name: timeout
+      prompt: "Enter capture duration in seconds"
+      default: 60
+      private: no
+    # This is really just so the user knows where the files are saved, since a debug message gets lost in the mess
+    - name: folder
+      prompt: "Enter location to save pcaps"
+      default: "~/captures"
+      private: no
+
+  tasks:
+    - name: setendpointfilter
+      set_fact:
+        capfilter: "{{ endpointfilter }}"
+      when: "'endpoints' in group_names"
+    - name: setprobefilter
+      set_fact:
+        capfilter: "{{ probefilter }}"
+      when: "'probes' in group_names"
+
+    - name: start tcpdump
+      # run tcpdump for given number of seconds, save to file
+      # -U to flush to file immediately, in case not many packets
+      command: /usr/sbin/tcpdump -U -i {{ ansible_default_ipv4.interface }} -w /tmp/{{ capfile }} -G {{ timeout }} -W 1 {{ capfilter }}
+      async: "{{ timeout|int + 10 }}"
+      poll: 0
+      become: true
+    - pause: seconds={{ timeout|int + 10 }} prompt="waiting for packet capture to complete"
+    - name: copy pcaps back to server
+      fetch:
+        src: /tmp/{{ capfile }}
+        dest: {{ folder }}/ flat=yes
+    - name: remove pcaps
+      file:
+        path: /tmp/{{ capfile }}
+        state: absent
+      become: true

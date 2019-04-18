@@ -114,6 +114,7 @@
     connection: local
     run_once: true
     loop: "{{ ansible_play_hosts }}"
+    when: "'probes' in hostvars[item]['group_names']"
     notify: Update SSH keyfile
 
 # Run the copy SSH keys now, in case a task fails later and the playbook stops

@@ -1,5 +1,6 @@
 # {{ ansible_managed }}
 127.0.0.1       localhost
+127.0.0.1       localhost       {{ inventory_hostname }}    {{ inventory_hostname.split('.')[0] }}
 {{ ansible_default_ipv4.address }}       {{ inventory_hostname }}    {{ inventory_hostname.split('.')[0] }}
 
 # The following lines are desirable for IPv6 capable hosts

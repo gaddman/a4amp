@@ -7,8 +7,6 @@
     collector: amp.example.com
     # Download of YAML schedules
     schedules: amp.example.com
-    # Additional endpoint stats InfluxDB
-    stats: amp.example.com
     # Syslog receiver for probe command log
     syslog: amp.example.com
 
@@ -39,6 +37,12 @@
     password: secret
     reply: amp@example.com
 
+  # Endpoint stats database (InfluxDB)
+  stats:
+    server: amp.example.com
+    user: probes
+    password: secret
+
   # Failsafe script is executed once every week as root
   # If connection to this server is lost then use to recover probes
   failsafe: http://198.51.100.1/amp/failsafe.sh
@@ -63,30 +67,30 @@
   probe2endpoint:
     - label: BNG
       regex: dummy-bng-nearest
-      default: akl.amp.vodafone.co.nz
+      default: akl.amp.example.com
   # One or more mappings from location to and endpoint
   # Default from the first one in the list is used for speedtests
   location2endpoint:
     # Edge endpoint mapped according to location
     - label: Edge
       regex: dummy-edge-nearest
-      default: chc.amp.vodafone.co.nz
-      'Northland': akl.amp.vodafone.co.nz
-      'Auckland': akl.amp.vodafone.co.nz
-      'Waikato': akl.amp.vodafone.co.nz
-      'Bay of Plenty': akl.amp.vodafone.co.nz
-      'Gisborne': akl.amp.vodafone.co.nz
-      "Hawke's Bay": akl.amp.vodafone.co.nz
-      'Taranaki': akl.amp.vodafone.co.nz
-      'Manawatu-Wanganui': wlg.amp.vodafone.co.nz
-      'Wellington': wlg.amp.vodafone.co.nz
-      'Tasman': wlg.amp.vodafone.co.nz
-      'Nelson': wlg.amp.vodafone.co.nz
-      'Marlborough': wlg.amp.vodafone.co.nz
-      'West Coast': chc.amp.vodafone.co.nz
-      'Canterbury': chc.amp.vodafone.co.nz
-      'Otago': chc.amp.vodafone.co.nz
-      'Southland': chc.amp.vodafone.co.nz
+      default: chc.amp.example.com
+      'Northland': akl.amp.example.com
+      'Auckland': akl.amp.example.com
+      'Waikato': akl.amp.example.com
+      'Bay of Plenty': akl.amp.example.com
+      'Gisborne': akl.amp.example.com
+      "Hawke's Bay": akl.amp.example.com
+      'Taranaki': akl.amp.example.com
+      'Manawatu-Wanganui': wlg.amp.example.com
+      'Wellington': wlg.amp.example.com
+      'Tasman': wlg.amp.example.com
+      'Nelson': wlg.amp.example.com
+      'Marlborough': wlg.amp.example.com
+      'West Coast': chc.amp.example.com
+      'Canterbury': chc.amp.example.com
+      'Otago': chc.amp.example.com
+      'Southland': chc.amp.example.com
 
   # Probe groups
   # Group name, regex and variables used for creating Ansible groups

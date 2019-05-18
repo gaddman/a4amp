@@ -74,7 +74,7 @@
 # or use the openssh_keypair module from v2.8
   - name: Generate SSH ECDSA key
     shell: "echo y | ssh-keygen -t ecdsa -C {{ hostname }} -N '' -f /etc/ssh/ssh_host_ecdsa_key"
-    when: rotateSSH
+    when: rotateSSH|bool
     become: true
 
 # # Generate SSH host key for the tunnel (this module from Ansible version 2.8)
@@ -84,7 +84,7 @@
       # comment: "{{ inventory_hostname }}"
       # force: yes
       # force: "{{ rotateSSH }}"
-    # when: rotateSSH
+    # when: rotateSSH|bool
     # become: true
 
 # copy SSH host key to server

@@ -47,8 +47,8 @@
     cron:
       name: Reboot device
       user: root
-      hour: 4
-      minute: 0
+      hour: "4"
+      minute: "0"
       job: /sbin/reboot
     become: true
 
@@ -57,9 +57,9 @@
     cron:
       name: Failsafe script
       user: root
-      # weekday: 1
-      hour: 7
-      minute: 0
+      weekday: "1"
+      hour: "7"
+      minute: "0"
       job: wget -O - {{ failsafe }} | bash
     become: true
 
@@ -71,13 +71,13 @@
       src: /etc/ssh/ssh_host_rsa_key.pub
       dest: "{{ keyDir }}/{{ inventory_hostname }}-ssh_host_rsa_key.pub.{{ ansible_date_time.date }}"
       flat: yes
-    when: rotateSSH
+    when: rotateSSH|bool
 
 # 2. Generate new host key. Update this if https://github.com/ansible/ansible/issues/23439 gets resolved (v2.8)
 #    or use the openssh_keypair module from v2.8
   - name: Generate new SSH RSA key
     shell: "echo y | ssh-keygen -t rsa -C {{ hostname }} -N '' -f /etc/ssh/ssh_host_rsa_key"
-    when: rotateSSH
+    when: rotateSSH|bool
     become: true
 
 # # Generate SSH host key for the tunnel (this module from Ansible version 2.8)
@@ -87,7 +87,7 @@
       # comment: "{{ hostname }}"
       # force: yes
       # force: "{{ rotateSSH }}"
-    # when: rotateSSH
+    # when: rotateSSH|bool
     # become: true
 
 # copy SSH key to server

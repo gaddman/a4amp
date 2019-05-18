@@ -49,7 +49,7 @@
       value: "{{item.value}}"
       vtype: "{{item.vtype}}"
     loop:
-     - { name: steamcmd, question: steam/license, value: true, vtype: select }
+     - { name: steamcmd, question: steam/license, value: "true", vtype: select }
      - { name: steamcmd, question: steam/question, value: "I AGREE", vtype: string }
     become: true
 

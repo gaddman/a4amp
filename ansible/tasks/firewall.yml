@@ -16,7 +16,7 @@
     loop:
      - user.rules
      - user6.rules
-    when: "not rebuildFW"
+    when: "not rebuildFW|bool"
     become: true
     notify: Reload firewall
 
@@ -26,7 +26,7 @@
   - name: Firewall - reset rules
     ufw:
       state: reset
-    when: "rebuildFW"
+    when: "rebuildFW|bool"
     become: true
 
 # Probes and endpoints only (also applies to this server)
@@ -36,7 +36,7 @@
       from_ip: "{{ item.ip }}"
       comment: "{{ item.txt }}"
     loop: "{{ firewall.all }}"
-    when: "rebuildFW"
+    when: "rebuildFW|bool"
     become: true
 
 # Probes only
@@ -46,7 +46,7 @@
       from_ip: "{{ item.ip }}"
       comment: "{{ item.txt }}"
     loop: "{{ firewall.probes }}"
-    when: "rebuildFW and 'probes' in group_names"
+    when: "rebuildFW|bool and 'probes' in group_names"
     become: true
 
 # Endpoints only (also applies to this server)
@@ -56,7 +56,7 @@
       from_ip: "{{ item.ip }}"
       comment: "{{ item.txt }}"
     loop: "{{ firewall.endpoints }}"
-    when: "rebuildFW and ('endpoints' in group_names or inventory_hostname=='localhost')"
+    when: "rebuildFW|bool and ('endpoints' in group_names or inventory_hostname=='localhost')"
     become: true
 
 # Enable firewall. Assuming default policy is Default: deny (incoming), allow (outgoing), disabled (routed)
@@ -74,5 +74,5 @@
     loop:
      - user.rules
      - user6.rules
-    when: "rebuildFW and inventory_hostname!='localhost'"
+    when: "rebuildFW|bool and inventory_hostname!='localhost'"
     become: true

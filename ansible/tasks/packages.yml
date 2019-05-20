@@ -54,7 +54,6 @@
     become: true
 
 # should update below to be tidier and read from a file
-# Unauthenticated packages are allowed so that Erlang installs OK
   - name: Install packages <16.04 x86 probes>
     when: "'probes' in group_names and ansible_distribution == 'Ubuntu' and ansible_distribution_major_version == '16' and ansible_architecture == 'x86_64'"
     apt:
@@ -76,7 +75,6 @@
         - whois
       state: latest
       update_cache: yes
-      # allow_unauthenticated: yes
       autoremove: yes
     loop:
     become: true
@@ -102,7 +100,6 @@
         - whois
       state: latest
       update_cache: yes
-      # allow_unauthenticated: yes
       autoremove: yes
     become: true
     notify: Restart Amplet
@@ -113,10 +110,10 @@
     apt:
       name:
         - amplet2-client
-        # - amplet2-chromium-libs
+        # - amplet2-chromium-libs  (pending Brendon to develop)
         - curl
         - iftop
-        - linux-generic-hwe-16.04
+        # - linux-generic-hwe-16.04  (NanoPi Neo Plus2 isn't using mainline kernel)
         - nmap
         - ntp
         - phantomjs
@@ -128,7 +125,6 @@
         - whois
       state: latest
       update_cache: yes
-      # allow_unauthenticated: yes
       autoremove: yes
     become: true
     notify: Restart Amplet
@@ -152,7 +148,6 @@
         - whois
       state: latest
       update_cache: yes
-      # allow_unauthenticated: yes
       autoremove: yes
     become: true
     notify: Restart Amplet
@@ -174,7 +169,6 @@
         - whois
       state: latest
       update_cache: yes
-      # allow_unauthenticated: yes
       autoremove: yes
     become: true
     notify: Restart Amplet
@@ -202,7 +196,6 @@
         - libapache2-mod-php
       state: latest
       update_cache: yes
-      # allow_unauthenticated: yes
       autoremove: yes
     become: true
     notify:
@@ -220,13 +213,11 @@
 
 # NDT is a custom built off the latest source (since they don't publish a package)
 # The dictionary maps the architecture variable to the filename
-# ignore_errors because no aarch64 package available yet
   - name: Install NDT
     apt:
       deb: "{{ packagesURL }}/ndt_3.7.0-1_{{ {'aarch64':'arm64.deb', 'armv7l':'armhf.deb', 'x86_64':'amd64.deb'}[ansible_architecture] }}"
       dpkg_options: force-overwrite
     become: true
-    ignore_errors: true
 
 # SRP needs to be installed via PIP because Ubuntu package is old (getRGWinfo script needs 1.0.12)
   - name: Install SRP

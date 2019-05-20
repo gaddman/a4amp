@@ -59,6 +59,18 @@
   # Command line flags to use with speedtest.py (or leave blank)
   ooklaServers: --server 4954
 
+  # Command history
+  # Shell  commands to add to history of all users for convenience
+  cmdHistory:
+    - sudo amp-throughput -d 2 --cacert /etc/amplet2/keys/{{ server.collector }}.pem --cert /etc/amplet2/keys/{{ inventory_hostname }}/{{ server.collector }}.cert --key /etc/amplet2/keys/{{ inventory_hostname }}/key.pem -- {{ location2endpoint[0][location] | default(location2endpoint[0].default) }}
+    - wget --report-speed=bits -O /dev/null http://{{ location2endpoint[0][location] | default(location2endpoint[0].default) }}/50MB.bin
+    - iperf3 -R -c {{ location2endpoint[0][location] | default(location2endpoint[0].default) }}
+    - speedtest {{ ooklaServers }} --socket
+    - web100clt -n ndt-iupui-mlab1-akl01.measurement-lab.org
+    - mtr -rwbc5 www.trademe.co.nz
+    - curl ipboomhauer.com
+    - sudo tcpdump -i {{ ansible_default_ipv4.interface }} port not ssh
+
   # Endpoints - dummy replacements
   # 'label' is used in the Ansible output for a more meaningful display
   # 'regex' is the text that will be replaced, and should match the sitename in AMPweb

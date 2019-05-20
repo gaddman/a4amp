@@ -79,29 +79,20 @@
 # Bash environment - nested loop of files and users
   - name: Bash environment
     copy:
-      src: files/{{ item.0 }}
-      dest: /home/{{ item.1.usr }}/{{ item.0 }}
-    loop: "{{ ['.bashrc', '.profile', '.iftoprc'] | product(users_admin + users_normal)|list }}"
+      src: files/{{ item.1 }}
+      dest: /home/{{ item.0.usr }}/{{ item.1 }}
+    loop: "{{ (users_admin + users_normal) | product(['.bashrc', '.profile', '.iftoprc']) | list }}"
     loop_control:
-      label: "file {{ item.0 }}, user {{ item.1.usr }}"
+      label: "user {{ item.0.usr }}, file {{ item.1 }}"
     become: true
 
 # Add some commands to Bash history
   - name: Bash history
     lineinfile:
-      dest: ~/.bash_history
-      line: "{{ item }}"
+      dest: /home/{{ item.0.usr }}/.bash_history
+      line: "{{ item.1 }}"
       create: yes
-    loop:
-      - cat /etc/default/probeid
-      - sudo service amplet2-client restart
-      - sudo tail -f /var/log/amplet2/amplet2.log
-      - cat /etc/amplet2/schedules/{{ inventory_hostname }}/fetched.sched
-      - sudo amp-throughput -d 2 --cacert /etc/amplet2/keys/{{ server.collector }}.pem --cert /etc/amplet2/keys/{{ inventory_hostname }}/{{ server.collector }}.cert --key /etc/amplet2/keys/{{ inventory_hostname }}/key.pem -- {{ location2endpoint[0][location] | default(location2endpoint[0].default) }}
-      - wget --report-speed=bits -O /dev/null http://{{ location2endpoint[0][location] | default(location2endpoint[0].default) }}/50MB.bin
-      - iperf3 -R -c {{ location2endpoint[0][location] | default(location2endpoint[0].default) }}
-      - speedtest {{ ooklaServers }} --socket
-      - web100clt -n ndt-iupui-mlab1-akl01.measurement-lab.org
-      - mtr -rwbc5 www.trademe.co.nz
-      - curl ipboomhauer.com
-      - sudo tcpdump -i {{ ansible_default_ipv4.interface }} port not ssh
+    loop: "{{ (users_admin + users_normal) | product(cmdHistory) | list }}"
+    loop_control:
+      label: "user {{ item.0.usr }}, command {{ item.1 }}"
+    become: true

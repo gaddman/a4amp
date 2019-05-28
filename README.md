@@ -7,7 +7,7 @@ a4amp is designed for an environment with a number of AMP nodes in the field (pr
 * probes
   * must be in a mesh called `probes`
   * may be behind NAT, but must be able to SSH to the server to set up a reverse SSH tunnel
-  * probes are numbered from 800-999, and set up local SSH tunnels on ports 2800-2999
+  * probes are numbered from 000-999, and set up local SSH tunnels on ports 2000-2999
   * the description field must follow the format `<hardware>;<owner>;<site>;<test endpoint>;`
 * endpoints
   * must be in a mesh starting with `endpoints`
@@ -15,10 +15,11 @@ a4amp is designed for an environment with a number of AMP nodes in the field (pr
   * the description field must follow the format `<hardware>;<owner>;<site>; ;<static IP details>`
 
 ### Server
-Server must have Ansible installed (tested with v2.7). Tested with Ubuntu 18.04.
+Server must have Ansible installed (tested with v2.8). Tested with Ubuntu 18.04.
 
 ### Probes
 Tested with:
+* Ubuntu 16.04 aarch64
 * Ubuntu 16.04 x86_64
 * Ubuntu 18.04 x86_64
 * Ubuntu 14.04 armv7l
@@ -69,12 +70,12 @@ Host 802
 Copy the AMP CA cert from `/etc/amppki/cacert.pem` to `<keyDir>/<serverFQDN>.pem`
 
 ### Packages
-Custom packages need to be built and hosted somewhere the probes can access. See `main.yml` and `packages.yml` for details, but at present:
-* iperf3_3.6-1_amd64.deb
-* ndt_3.7.0-1_amd64.deb
+Custom packages have been built and need to be hosted somewhere the probes can access. The built .deb files are in the `packages` folder, and the URL to host them at is set in `main.yml`, with the task itself in `packages.yml`. The following packages have been built:
+* iperf3_3.6
+* ndt_3.7.0
 
 ### Failsafe
 A probe failsafe is implemented in case the main server is lost. See `main.yml` for an example.
 
 ### Endpoint stats
-Endpoint OS stats are sent to an InfluxDB instance. This can be the same as that used for the AMP measurements, in which case no further configuration is required. Set server in `main.yml`.
+Endpoint OS stats are sent to an InfluxDB instance, which can be the same as that used for the AMP measurements. Set server and credentials (if used) in `main.yml`.

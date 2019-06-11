@@ -94,12 +94,12 @@ if update:
 		regex = r'^([^;]+); [^;]*; [^;]*; ([^;]*); ([^;]*)$'
 		for site in probeList:
 			hardware, endpoint, staticIP = re.search(regex, site["description"]).groups()
-			f.write("{} access='{}' location='{}' hardware='{}' endpoint='{}' staticIP='{}'\n".format(
+			f.write('{} access="{}" location="{}" hardware="{}" endpoint="{}" staticIP="{}"\n'.format(
 				site["ampname"], site["longname"], site["location"], hardware, endpoint, staticIP))
 		f.write("[endpoints]\n")
 		for site in endpointList:
 			hardware, endpoint, staticIP = re.search(regex, site["description"]).groups()
-			f.write("{} access='{}' location='{}' hardware='{}' endpoint='{}' staticIP='{}'\n".format(
+			f.write('{} access="{}" location="{}" hardware="{}" endpoint="{}" staticIP="{}"\n'.format(
 				site["ampname"], site["longname"], site["location"], hardware, endpoint, staticIP))
 		for groupname, groupinfo in ansibleGroups.items():
 			# groupinfo is either just a regex match, or a list with regex followed by vars

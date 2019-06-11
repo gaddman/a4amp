@@ -14,7 +14,18 @@
     hostname:
       name: "{{ hostname }}"
     become: true
- 
+
+# Ensure correct time (adjust if >30s out)
+  - name: Get probe time
+    command: date +"%Y-%m-%dT%H:%M:%S"
+    register: probetime
+    changed_when: false
+  - name: Set time
+    command: date -s "{{ now() }}"
+    when: ( now() - (probetime.stdout | to_datetime('%Y-%m-%dT%H:%M:%S'))).total_seconds()|abs > 30
+    become: true
+    notify: Restart Amplet
+
 # NTP for local servers
   - name: NTP config
     copy:

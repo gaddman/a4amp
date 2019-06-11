@@ -37,7 +37,6 @@ The user managing the probes will need sudo rights to the following:
 * `/bin/ss` - identifying connected probes
 * `/usr/sbin/ampca` - updating AMPCA keys
 * `/bin/cp <keyDir>/authorized_keys /home/tunnel/.ssh/authorized_keys` - setting up SSH tunnel keys
-* `postgres` user - getting list of probes
 
 Example `/etc/sudoers`:
 ```

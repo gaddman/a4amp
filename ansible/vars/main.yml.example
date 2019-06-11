@@ -5,10 +5,14 @@
   server:
     # rabbitMQ destination for test results
     collector: amp.example.com
-    # Download of YAML schedules
-    schedules: amp.example.com
     # Syslog receiver for probe command log
     syslog: amp.example.com
+
+  # AMP web server and credentials for reading site lists and downloading schedules
+  ampweb:
+    server: amp.example.com
+    user: probes
+    password: secret
 
   # RabbitMQ settings
   # Use a local RabbitMQ server to cache results on probe

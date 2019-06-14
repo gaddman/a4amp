@@ -58,7 +58,6 @@ def printProbe(hostname, ip, access, location, hardware, endpoint=''):
 def parseDescription(description):
 	# Extract components of the probe description to get useful fields
 	# Tried to be a little flexible with regex to allow for badly formatted description field
-	regex = r'^([^;]+); *[^;]*; *[^;]*; *([^;]*); *([^;]*)$'
 	try:
 		# 1st field
 		hardware = re.search(r'^([^;]+)', description).group(1).strip()

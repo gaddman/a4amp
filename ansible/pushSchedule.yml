@@ -14,7 +14,7 @@
     - name: Retrieve probe schedule
       connection: local
       get_url:
-        url: 'https://{{ server.schedules }}/yaml/{{ inventory_hostname }}'
+        url: 'https://{{ ampweb.server }}/yaml/{{ inventory_hostname }}'
         dest: '{{schedDir}}/{{ inventory_hostname }}.original'
         force: yes
         timeout: 20

@@ -96,6 +96,7 @@
     loop_control:
       label: "user {{ item.0.usr }}, file {{ item.1 }}"
     become: true
+    become_user: "{{ item.0.usr }}"
 
 # Add some commands to Bash history
   - name: Bash history
@@ -107,3 +108,4 @@
     loop_control:
       label: "user {{ item.0.usr }}, command {{ item.1 }}"
     become: true
+    become_user: "{{ item.0.usr }}"

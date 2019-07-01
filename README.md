@@ -41,7 +41,6 @@ The user managing the probes will need sudo rights to the following:
 Example `/etc/sudoers`:
 ```
 <user>    ALL=(ALL) NOPASSWD: /bin/ss, /usr/sbin/ampca, /bin/cp <keyDir>/authorized_keys /home/tunnel/.ssh/authorized_keys
-<user>    ALL=(postgres) NOPASSWD:ALL
 ```
 
 ### Set up SSH tunnel management
@@ -78,3 +77,30 @@ A probe failsafe is implemented in case the main server is lost. See `main.yml` 
 
 ### Endpoint stats
 Endpoint OS stats are sent to an InfluxDB instance, which can be the same as that used for the AMP measurements. Set server and credentials (if used) in `main.yml`.
+
+## Usage
+
+### Scripts
+Scripts are in the `a4amp/scripts` folder. Once installed, a probe or endpoint can be built by running `build.sh <probeID>`, tests scheduled by running `schedule.py`, and connected probes checked by running `probes.py`. The complete list of scripts includes:
+
+* `amplet.sh` - start/stop the AMP service on chosen probes
+* `build.sh` - deploy packages and configuration to a chosen probe. It is intended to be run once since it will rotate the SSH keys, so the corresponding playbook (`build.yml`) should be run as a regular task.
+* `capture.sh` - get a packet capture from a probe and endpoint, and upload to the management server
+* `cmd.sh` - shortcut to run a command on one or more probes
+* `localFW.sh` - apply the firewall rules used on the endpoints to the management server
+* `probelog.sh` - keep track of probe connections and disconnections
+* `probes.py` - show connected probes, or update the list from the AMP database
+* `schedule.py` - deploy the AMP test schedule to the probes, or review it to check for conflicts
+* `speedtest.sh` - run a selection of different speedtests against a chosen probe
+
+### Playbooks
+All playbooks are in the `a4amp/ansible` folder. Two playbooks provide the main functions.
+* `build.yml` - deploy packages and configuration to a chosen probe
+* `pushSchedule.yml` - used by the `schedule.py` script
+
+Other playbooks are included for convenience:
+* `localFW.yml` - apply the same firewall rules used on the endpoints to the management server
+* `ndt.yml` - run an [NDT](https://www.measurementlab.net/tests/ndt/) speedtest
+* `tcpdump.yml` - get a packet capture from a probe and endpoint, and upload to the management server
+* `updatePackages.yml` - update AMP or all packages on probes/endpoints
+* `vlan10.yml` - add/remove a second interface with VLAN10 configured, to allow connection directly to a UFB ONT or HFC cable modem.

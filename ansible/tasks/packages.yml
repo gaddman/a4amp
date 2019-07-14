@@ -110,7 +110,7 @@
     apt:
       name:
         - amplet2-client
-        # - amplet2-chromium-libs  (pending Brendon to develop)
+        # - amplet2-chromium-libs  (pending Brendon to package)
         - curl
         - iftop
         # - linux-generic-hwe-16.04  (NanoPi Neo Plus2 isn't using mainline kernel)
@@ -134,7 +134,7 @@
     apt:
       name:
         - amplet2-client
-        # - amplet2-chromium-libs
+        # - amplet2-chromium-libs  (pending Brendon to package)
         - curl
         - iftop
         # - linux-generic-hwe-16.04 # doesn't work on Banana Pi's
@@ -157,7 +157,7 @@
     apt:
       name:
         - amplet2-client
-        # - amplet2-chromium-libs
+        # - amplet2-chromium-libs  (pending Brendon to package)
         - curl
         - iftop
         - nmap

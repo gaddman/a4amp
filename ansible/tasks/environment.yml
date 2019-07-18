@@ -38,7 +38,7 @@
   - name: Telegraf config <endpoints>
     template:
       src: templates/telegraf.conf
-      dest: /etc/telegraf/telegraf.conf
+      dest: /etc/telegraf/telegraf.d/amp.conf
     when: "'endpoints' in group_names"
     become: true
     notify: Restart Telegraf

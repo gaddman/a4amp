@@ -106,9 +106,10 @@
     when: "'probes' in hostvars[item]['group_names']"
     notify: Chmod SSH known_hosts
 
+# Add both name and IP (lookup SSH connection details to get the IP address)
   - name: Add SSH ECDSA key to known_hosts <endpoints>
     known_hosts:
-      key: "{{ item }} {{ lookup('file', '{{ keyDir }}/{{ item }}-ssh_host_ecdsa_key.pub') }}"
+      key: "{{ item }},{{ hostvars[item]['ansible_env'].SSH_CONNECTION.split(' ')[2] }} {{ lookup('file', '{{ keyDir }}/{{ item }}-ssh_host_ecdsa_key.pub') }}"
       name: "{{ item }}"
       path: "{{ keyDir }}/known_hosts"
     connection: local

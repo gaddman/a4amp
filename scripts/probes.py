@@ -9,11 +9,11 @@
 import argparse
 import json
 import pathlib
+import re
 import requests
 import subprocess
 import string
 import shlex
-import re
 import sys
 import yaml
 from operator import itemgetter
@@ -29,8 +29,7 @@ config = str(directory) + "/ansible/vars/main.yml"
 ansibleGroups = yaml.load(open(config))['ansibleGroups']
 
 parser = argparse.ArgumentParser(description="Display list of AMP probes and their IP addresses")
-parser.add_argument("-u", '--update', help="Update list of probes/endpoints from AMP (must be run as root or \
-					user who can switch to postgres user)", action='store_true')
+parser.add_argument("-u", '--update', help="Update list of probes/endpoints from AMP", action='store_true')
 parser.add_argument("-a", '--all', help="Display all probes (include endpoints). Use twice to also display \
 					disconnected probes.", action='count')
 parser.add_argument("-c", '--count', help="Display count only", action='store_true')
@@ -46,6 +45,26 @@ endpointsonly = args.endpoints
 matchlist = args.match
 update = args.update
 number = args.number
+
+class AMPsession:
+	# Connection to the AMPweb server to get mesh details or test results
+	def __init__(self):
+		# Get config from YAML
+		server = yaml.load(open(config))['ampweb']['server']
+		username = yaml.load(open(config))['ampweb']['user']
+		password = yaml.load(open(config))['ampweb']['password']
+		self.baseURL = "https://" + server + "/"
+		# Login to server
+		self.session = requests.Session()
+		payload = {'username': username, 'password': password, 'login.submitted': ''}
+		response = self.session.post(self.baseURL, data=payload)
+		if "Incorrect username or password" in response.content.decode():
+			sys.exit("Username or password invalid connecting to AMP server")
+
+	def get(self, location):
+		# Get mesh or test data from server
+		response = self.session.get(self.baseURL + location)
+		return json.loads(response.content)
 
 def printProbe(hostname, ip, access, location, hardware, endpoint=''):
 	# Print the probe details nicely
@@ -78,31 +97,17 @@ def parseDescription(description):
 if update:
 	# Update the Ansible inventory from the AMP web list
 	print("Updating list of probes and endpoints...")
-	# Login to server
-	server = yaml.load(open(config))['ampweb']['server']
-	baseURL = "https://" + server + "/"
-	username = yaml.load(open(config))['ampweb']['user']
-	password = yaml.load(open(config))['ampweb']['password']
-	session = requests.Session()
-	payload = {'username': username, 'password': password, 'login.submitted': ''}
-	response = session.post(baseURL, data=payload)
-	if "Incorrect username or password" in response.content.decode():
-		sys.exit("Username or password invalid retrieving probe list")
+	# Connect to server
+	server = AMPsession()
 	# Get probe list - from the 'probes' mesh
-	url = baseURL + "api/v2/meshes/probes/sites"
-	response = session.get(url)
-	probeList = json.loads(response.content)["membership"]
+	probeList = server.get("api/v2/meshes/probes/sites")["membership"]
 	probeList = sorted(probeList, key=itemgetter("ampname"))
 	# Get endpoint list - from any mesh starting with 'endpoints'
-	url = baseURL + "api/v2/meshes"
-	response = session.get(url)
-	meshes = json.loads(response.content)['meshes']
+	meshes = server.get("api/v2/meshes")["meshes"]
 	endpointList = []
 	for mesh in meshes:
 		if mesh['ampname'].startswith("endpoints"):
-			url = baseURL + "api/v2/meshes/" + mesh["ampname"] + "/sites"
-			response = session.get(url)
-			thismesh = json.loads(response.content)["membership"]
+			thismesh = server.get("api/v2/meshes/" + mesh["ampname"] + "/sites")["membership"]
 			endpointList = endpointList + thismesh
 	endpointList = sorted(endpointList, key=itemgetter("ampname"))
 

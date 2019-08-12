@@ -46,7 +46,8 @@ delta=$(diff --old-line-format="[$timestamp] Disconnected: %L" --new-line-format
 # Log and email if there's a change
 if [[ ! -z "$delta" ]]; then
     echo "$delta" >> $logfile
-    echo "$delta" | s-nail -r "$reply" -s "Probe (dis)connected" -S smtp="$server" -S smtp-use-starttls -S smtp-auth=login -S smtp-auth-user="$user" -S smtp-auth-password="$password" -S ssl-verify=ignore "$recipients"
+    # echo "$delta" | s-nail -r "$reply" -s "Probe (dis)connected" -S smtp="$server" -S smtp-use-starttls -S smtp-auth=login -S smtp-auth-user="$user" -S smtp-auth-password="$password" -S ssl-verify=ignore -S ssl-rand-file=/tmp/mail.rnd "$recipients"
+    echo "$delta" | mailx -r "$reply" -s "Probe (dis)connected" "$recipients"
 fi
 
 # Update old probestatus

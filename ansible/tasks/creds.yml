@@ -70,22 +70,14 @@
     become: true
 
 # Force generation of new SSH keys by passing variable: --extra-vars "rotateSSH=true"
-# Generate new host key. Update this if https://github.com/ansible/ansible/issues/23439 gets resolved (v2.8)
-# or use the openssh_keypair module from v2.8
+# Generate SSH host key for the tunnel
   - name: Generate SSH ECDSA key
-    shell: "echo y | ssh-keygen -t ecdsa -C {{ hostname }} -N '' -f /etc/ssh/ssh_host_ecdsa_key"
+    openssh_keypair:
+      path: /etc/ssh/ssh_host_ecdsa_key
+      comment: "{{ inventory_hostname }}"
+      force: "{{ rotateSSH }}"
     when: rotateSSH|bool
     become: true
-
-# # Generate SSH host key for the tunnel (this module from Ansible version 2.8)
-  # - name: Generate SSH ECDSA key
-    # openssh_keypair:
-      # path: /etc/ssh/ssh_host_ecdsa_key
-      # comment: "{{ inventory_hostname }}"
-      # force: yes
-      # force: "{{ rotateSSH }}"
-    # when: rotateSSH|bool
-    # become: true
 
 # copy SSH host key to server
   - name: Backup SSH ECDSA key
@@ -95,27 +87,29 @@
       flat: yes
 
 # Add SSH host key to server's known_hosts (need to ignore checks initially via cmdline arg)
+# known_hosts module doesn't lock file which is a problem when running against multiple hosts (some keys aren't added).
+# Workaround is to run one host at a time, using the 'throttle' keyword
   - name: Add SSH ECDSA key to known_hosts <probes>
     known_hosts:
-      key: "[localhost]:2{{ item }} {{ lookup('file', '{{ keyDir }}/{{ item }}-ssh_host_ecdsa_key.pub') }}"
-      name: "[localhost]:2{{ item }}"
+      key: "[localhost]:2{{ inventory_hostname }} {{ lookup('file', '{{ keyDir }}/{{ inventory_hostname }}-ssh_host_ecdsa_key.pub') }}"
+      name: "[localhost]:2{{ inventory_hostname }}"
       path: "{{ keyDir }}/known_hosts"
     connection: local
-    run_once: true
-    loop: "{{ ansible_play_hosts }}"
-    when: "'probes' in hostvars[item]['group_names']"
+    throttle: 1
+    when: "'probes' in group_names"
     notify: Chmod SSH known_hosts
 
 # Add both name and IP (lookup SSH connection details to get the IP address)
+# known_hosts module doesn't lock file which is a problem when running against multiple hosts (some keys aren't added).
+# Workaround is to run one host at a time, using the 'throttle' keyword
   - name: Add SSH ECDSA key to known_hosts <endpoints>
     known_hosts:
-      key: "{{ item }},{{ hostvars[item]['ansible_env'].SSH_CONNECTION.split(' ')[2] }} {{ lookup('file', '{{ keyDir }}/{{ item }}-ssh_host_ecdsa_key.pub') }}"
-      name: "{{ item }}"
+      key: "{{ inventory_hostname }},{{ ansible_env.SSH_CONNECTION.split(' ')[2] }} {{ lookup('file', '{{ keyDir }}/{{ inventory_hostname }}-ssh_host_ecdsa_key.pub') }}"
+      name: "{{ inventory_hostname }}"
       path: "{{ keyDir }}/known_hosts"
     connection: local
-    run_once: true
-    loop: "{{ ansible_play_hosts }}"
-    when: "'endpoints' in hostvars[item]['group_names']"
+    throttle: 1
+    when: "'endpoints' in group_names"
     notify: Chmod SSH known_hosts
 
 # Run the chmod SSH known_hosts now, in case a task fails later and the playbook stops

@@ -73,22 +73,14 @@
       flat: yes
     when: rotateSSH|bool
 
-# 2. Generate new host key. Update this if https://github.com/ansible/ansible/issues/23439 gets resolved (v2.8)
-#    or use the openssh_keypair module from v2.8
+# 2. Generate SSH host key for the tunnel
   - name: Generate new SSH RSA key
-    shell: "echo y | ssh-keygen -t rsa -C {{ hostname }} -N '' -f /etc/ssh/ssh_host_rsa_key"
+    openssh_keypair:
+      path: /etc/ssh/ssh_host_rsa_key
+      comment: "{{ hostname }}"
+      force: "{{ rotateSSH }}"
     when: rotateSSH|bool
     become: true
-
-# # Generate SSH host key for the tunnel (this module from Ansible version 2.8)
-  # - name: Generate new SSH key pair
-    # openssh_keypair:
-      # path: /etc/ssh/ssh_host_rsa_key
-      # comment: "{{ hostname }}"
-      # force: yes
-      # force: "{{ rotateSSH }}"
-    # when: rotateSSH|bool
-    # become: true
 
 # copy SSH key to server
   - name: Backup SSH RSA key
@@ -100,21 +92,19 @@
 # Add SSH key to authorized keys
 # The authorized_key module with user=tunnel would require sudo for this user, so instead write to file and use a handler to copy across with allowed sudo command
 # authorized_key module doesn't lock file which is a problem when running against multiple hosts (some keys aren't added).
-# Workaround is to run once, but against all items (forces it to run serially). See https://github.com/ansible/ansible/issues/12170
-# Will be resolved once PR https://github.com/ansible/ansible/pull/42528 is merged (v2.9)
+# Workaround is to run one host at a time, using the 'throttle' keyword
 
   - name: Add SSH RSA key to server's authorized_keys
     authorized_key:
       user: "{{ ansible_user }}"
       key_options: no-pty,command="/bin/echo Access denied"
-      key: "{{ lookup('file', '{{ keyDir }}/{{ item }}-ssh_host_rsa_key.pub').split()[:2] | join(' ') }}"
-      comment: probe{{ item }}
+      key: "{{ lookup('file', '{{ keyDir }}/{{ inventory_hostname }}-ssh_host_rsa_key.pub').split()[:2] | join(' ') }}"
+      comment: "{{ hostname }}"
       path: "{{ keyDir }}/authorized_keys"
       manage_dir: no
     connection: local
-    run_once: true
-    loop: "{{ ansible_play_hosts }}"
-    when: "'probes' in hostvars[item]['group_names']"
+    throttle: 1
+    when: "'probes' in group_names"
     notify: Update SSH keyfile
 
 # Run the copy SSH keys now, in case a task fails later and the playbook stops

@@ -206,7 +206,7 @@ with open(ansibleInventory) as f:
 					# probe connected
 					pid = m.group(1)
 					# find IP address using the process ID. It could be the 1st or 2nd PID in the output
-					regex = r'ESTAB\s+\d+\s+\d+\s+\d+.\d+.\d+.\d+:\d+\s+(\d+.\d+.\d+.\d+):\d+\s+users:.*pid=' + str(pid) + r',fd'
+					regex = r'ESTAB\s+\d+\s+\d+\s+\S+:\d+\s+(\S+):\d+\s+users:.*pid=' + str(pid) + r',fd'
 					m = re.search(regex, portlist)
 					if m and not disconnected:
 						# found IP

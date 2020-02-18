@@ -57,14 +57,17 @@ class AMPsession:
 		# Login to server
 		self.session = requests.Session()
 		payload = {'username': username, 'password': password, 'login.submitted': ''}
-		response = self.session.post(self.baseURL, data=payload)
+		response = self.session.post(self.baseURL + "login", data=payload)
 		if "Incorrect username or password" in response.content.decode():
 			sys.exit("Username or password invalid connecting to AMP server")
 
 	def get(self, location):
 		# Get mesh or test data from server
 		response = self.session.get(self.baseURL + location)
-		return json.loads(response.content)
+		if response.status_code == 200:
+			return json.loads(response.content)
+		else:
+			sys.exit("Failed to get " + self.baseURL + location)
 
 def printProbe(hostname, ip, access, location, hardware, endpoint=''):
 	# Print the probe details nicely
@@ -102,6 +105,8 @@ if update:
 	# Get probe list - from the 'probes' mesh
 	probeList = server.get("api/v2/meshes/probes/sites")["membership"]
 	probeList = sorted(probeList, key=itemgetter("ampname"))
+	if len(probeList) == 0:
+		print("Warning: No probes in the 'probes' mesh")
 	# Get endpoint list - from any mesh starting with 'endpoints'
 	meshes = server.get("api/v2/meshes")["meshes"]
 	endpointList = []
@@ -110,6 +115,8 @@ if update:
 			thismesh = server.get("api/v2/meshes/" + mesh["ampname"] + "/sites")["membership"]
 			endpointList = endpointList + thismesh
 	endpointList = sorted(endpointList, key=itemgetter("ampname"))
+	if len(endpointList) == 0:
+		print("Warning: No probes in the 'endpoints*' meshes")
 
 	# Create hosts file. Groups (probes,endpoints,others) followed by common variables
 	with open(ansibleInventory, 'w') as f:

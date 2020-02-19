@@ -29,7 +29,7 @@
       groups:
       shell: /bin/bash
       password_lock: yes
-    loop: "{{ users_normal }}"
+    loop: "{{ users_normal|default([]) }}"
     loop_control:
       label: "{{ item.usr }}"
     become: true
@@ -40,7 +40,7 @@
       name: "{{ item }}"
       state: absent
       remove: yes
-    loop: "{{ users_deleted }}"
+    loop: "{{ users_deleted|default([]) }}"
     become: true
 
 # Check if GUI installed
@@ -64,7 +64,7 @@
       user: "{{ item.usr }}"
       key: "{{ item.key }}"
       exclusive: yes
-    loop: "{{ users_admin + users_normal }}"
+    loop: "{{ users_admin + users_normal|default([]) }}"
     loop_control:
       label: "{{ item.usr }}"
     become: true

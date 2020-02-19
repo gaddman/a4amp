@@ -8,6 +8,22 @@
 # (one probe, one endpoint). Watch that answer, and if no progress then probably best to add workaround as a task.
 # Assume the implications of the workaround aren't too problematic, since it used to work fine.
 
+# Check there are existing rules, rebuild if not
+  - name: Firewall - check for saved rules
+    connection: local
+    stat:
+      path: files/firewall/user.rules.probes
+    register: fwrules
+
+# Create firewall folder if required
+  - name: Create firewall directory if it does not exist
+    connection: local
+    file:
+      path: files/firewall
+      state: directory
+      mode: '0755'
+    when: not fwrules.stat.exists
+
 # Copy prebuilt ruleset from server (set of files for probes, different set for endpoints)
   - name: Firewall - load rules
     copy:
@@ -16,7 +32,7 @@
     loop:
      - user.rules
      - user6.rules
-    when: "not rebuildFW|bool"
+    when: "(not rebuildFW|bool) and fwrules.stat.exists"
     become: true
     notify: Reload firewall
 
@@ -26,7 +42,7 @@
   - name: Firewall - reset rules
     ufw:
       state: reset
-    when: "rebuildFW|bool"
+    when: "rebuildFW|bool or not fwrules.stat.exists"
     become: true
 
 # Probes and endpoints only (also applies to this server)
@@ -36,7 +52,7 @@
       from_ip: "{{ item.ip }}"
       comment: "{{ item.txt }}"
     loop: "{{ firewall.all }}"
-    when: "rebuildFW|bool"
+    when: "rebuildFW|bool or not fwrules.stat.exists"
     become: true
 
 # Probes only
@@ -46,7 +62,7 @@
       from_ip: "{{ item.ip }}"
       comment: "{{ item.txt }}"
     loop: "{{ firewall.probes }}"
-    when: "rebuildFW|bool and 'probes' in group_names"
+    when: "(rebuildFW|bool or not fwrules.stat.exists) and 'probes' in group_names"
     become: true
 
 # Endpoints only (also applies to this server)
@@ -56,7 +72,7 @@
       from_ip: "{{ item.ip }}"
       comment: "{{ item.txt }}"
     loop: "{{ firewall.endpoints }}"
-    when: "rebuildFW|bool and ('endpoints' in group_names or inventory_hostname=='localhost')"
+    when: "(rebuildFW|bool or not fwrules.stat.exists) and ('endpoints' in group_names or inventory_hostname=='localhost')"
     become: true
 
 # Enable firewall. Assuming default policy is Default: deny (incoming), allow (outgoing), disabled (routed)
@@ -74,5 +90,5 @@
     loop:
      - user.rules
      - user6.rules
-    when: "rebuildFW|bool and inventory_hostname!='localhost'"
+    when: "(rebuildFW|bool or not fwrules.stat.exists) and inventory_hostname!='localhost'"
     become: true

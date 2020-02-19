@@ -45,7 +45,13 @@ Example `/etc/sudoers`:
 
 ### Set up SSH tunnel management
 Create a user called `tunnel` that isn't able to login:
-```sudo useradd tunnel -m -s /usr/sbin/nologin```
+```
+sudo useradd tunnel -m -s /usr/sbin/nologin
+```
+and create a ```.ssh``` folder (to store the authorised keys):
+```
+sudo -u tunnel mkdir -m 0700 /home/tunnel/.ssh
+```
 
 For other users, add some SSH config (to `~/.ssh/config`):
 ```

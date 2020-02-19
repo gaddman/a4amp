@@ -9,11 +9,11 @@
       pass: '$6$SL0ZpIASbYfb$7Za.Vr6MSP20n0326RmJuJ9DnMSfYcEf0EmqSJIwZVHren8jBatymCcwwB0SIb/WRDk6yluuddBPOc0ZrDZtR/'
       key: 'ssh-rsa AAAA...123A alice@example.com'
 
-  users_normal:
-    - usr: bob
-      key: 'ssh-rsa AAAA...123B bob@example.com'
+  # users_normal:
+  #   - usr: bob
+  #     key: 'ssh-rsa AAAA...123B bob@example.com'
 
 # Old users to delete
 # List of usernames
-  users_deleted:
-    - dan
+  # users_deleted:
+  #   - dan

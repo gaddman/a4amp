@@ -23,7 +23,7 @@
   # SSH tunnel endpoint for probes
   tunnel:
     # IP address (should be the address of this server)
-    IP: 203.0.113.5
+    ip: 203.0.113.5
     # Fingerprint (output of `ssh-keyscan -t ecdsa` against the above IP address)
     key: "203.0.113.5 ecdsa-sha2-nistp256 AAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBLmw2JjbKMO5LXTcJ67et6TBZeLff1WghM6koKjiHGh+gBbZzHrhDj20MuTxTB1kaTYh7f9T2G/zmhVpFMyUUoQ="
 
@@ -123,6 +123,6 @@
     'Auckland': 'Auckland'
     'Wellington': 'Wellington'
     'Canterbury': 'Canterbury'
-    'HW-NUC': 'NUC'
-    'HW-Odroid': 'Odroid'
+    'HW_NUC': 'NUC'
+    'HW_Odroid': 'Odroid'
     'all': ['', ansible_python_interpreter=/usr/bin/python3]

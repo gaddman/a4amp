@@ -9,6 +9,13 @@
 
 
   tasks:
+    - name: Create schedule directory if it does not exist
+      connection: local
+      file:
+        path: "{{schedDir}}"
+        state: directory
+        mode: '0755'
+
     # This task was timing out because it was hitting the webserver (or database) too quickly, increased from default of 10 to 20.
     # Get original schedule with placeholder names
     - name: Retrieve probe schedule

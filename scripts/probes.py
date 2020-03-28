@@ -159,9 +159,10 @@ portlist = subprocess.check_output(['sudo', 'ss', '-antp', 'sport == 22 or src 1
 # ESTAB     0       0              203.0.113.145:22               192.0.2.5:51578  users:(("sshd",pid=61553,fd=3),("sshd",pid=60810,fd=3))
 
 # display probes & endpoints
-probesConnected = 0
 probes = 0
+probesConnected = 0
 endpoints = 0
+endpointsConnected = 0
 
 with open(ansibleInventory) as f:
 	for line in f:
@@ -208,12 +209,13 @@ with open(ansibleInventory) as f:
 					# find IP address using the process ID. It could be the 1st or 2nd PID in the output
 					regex = r'ESTAB\s+\d+\s+\d+\s+\S+:\d+\s+(\S+):\d+\s+users:.*pid=' + str(pid) + r',fd'
 					m = re.search(regex, portlist)
-					if m and not disconnected:
+					if m:
 						# found IP
 						ip = m.group(1)
 						probesConnected += 1
-						# and print everything
-						printProbe(hostname, ip, access, location, hardware, endpoint)
+						if not disconnected:
+							# probe connected
+							printProbe(hostname, ip, access, location, hardware, endpoint)
 				elif (all == 2) or disconnected:
 					# probe not connected
 					printProbe(hostname, "disconnected", access, location, hardware, endpoint)
@@ -231,6 +233,7 @@ with open(ansibleInventory) as f:
 				try:
 					response = subprocess.check_output(['timeout', '0.5', 'ping', '-c1', hostname]).decode('utf-8')
 					ip = re.match(r'PING ' + re.escape(hostname) + ' \((.*?)\)', response).group(1)
+					endpointsConnected += 1
 				except subprocess.CalledProcessError:
 					# failed (no response or unknown host)
 					ip = "disconnected"
@@ -238,9 +241,15 @@ with open(ansibleInventory) as f:
 				if not (disconnected and ip != "disconnected"):
 					printProbe(hostname, ip, access, location, hardware)
 
+# Show a summary of connection status, for matched probes
+probesDisconnected = probes - probesConnected
+endpointsDisconnected = endpoints - endpointsConnected
 if all:
-	print("\n{} connected probes of {} total plus {} endpoints".format(probesConnected, probes, endpoints))
+	print("\n{} connected probes of {} total ({} disconnected) plus {} endpoints ({} not responding)".format(
+		probesConnected, probes, probesDisconnected, endpoints, endpointsDisconnected))
 elif endpointsonly:
-	print("\n{} endpoints".format(endpoints))
+	print("\n{} endpoints ({} not responding)".format(endpoints, endpointsDisconnected))
+elif disconnected:
+	print("\n{} disconnected probes of {} total".format(probesDisconnected, probes))
 else:
 	print("\n{} connected probes of {} total".format(probesConnected, probes))

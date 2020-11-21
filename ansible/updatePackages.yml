@@ -30,7 +30,6 @@
       when: "upgradeList|int == 3"
       apt: deb={{item}}
       loop:
-        # - https://wand.net.nz/~brendonj/amp/amd64/xenial/amplet2-chromium-libs_0.8.2-2_{{ {'aarch64':'arm64.deb', 'armv7l':'arm.deb', 'x86_64':'amd64.deb'}[ansible_architecture] }}"
         - https://wand.net.nz/~brendonj/amp/amd64/xenial/amplet2-client_0.8.2-1~rc4_{{ {'aarch64':'arm64.deb', 'armv7l':'arm.deb', 'x86_64':'amd64.deb'}[ansible_architecture] }}
       become: true
       notify: Restart Amplet

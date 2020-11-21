@@ -1,0 +1,2 @@
+# To install newer packages when required. APT preferences ensures they must be installed manually
+deb http://nz.archive.ubuntu.com/ubuntu/ bionic-proposed main

@@ -26,14 +26,6 @@
     become: true
     notify: Restart Amplet
 
-# NTP for local servers
-  - name: NTP config
-    copy:
-      src: files/{{ ansible_architecture }}-{{ ansible_distribution }}{{ ansible_distribution_version }}/ntp.conf
-      dest: /etc/ntp.conf
-    become: true
-    notify: Restart NTP
-
 # Telegraf stats collection
   - name: Telegraf config <endpoints>
     template:
@@ -51,13 +43,6 @@
     when: "ansible_architecture == 'x86_64'"
     become: true
 
-# Syslog (for command logging)
-  - name: Syslog config
-    template:
-      src: templates/90-commands.conf
-      dest: /etc/rsyslog.d/90-commands.conf
-    become: true
-
 # Tell APT to do auto updates, upgrades and removal
   - name: APT auto-upgrade
     copy:
@@ -65,7 +50,6 @@
       dest: /etc/apt/apt.conf.d/{{ item }}
     loop:
      - 10periodic
-     - 20auto-upgrades
      - 50unattended-upgrades
     become: true
 

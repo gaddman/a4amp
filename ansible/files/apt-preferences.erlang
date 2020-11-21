@@ -1,7 +1,0 @@
-# Erlang version > 20.3 is not supported by RabbitMQ 3.6.15
-# see https://www.rabbitmq.com/which-erlang.html
-# priority>1000 to downgrade package if accidentally upgraded, see man apt_preferences
-
-Package: erlang-*
-Pin: version 1:20.3*
-Pin-Priority: 1001

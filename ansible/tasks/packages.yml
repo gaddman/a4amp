@@ -9,9 +9,13 @@
       state: present
     loop:
      - { id: '7C4B94E8', url: 'https://bintray.com/user/downloadSubjectPublicKey?username=wand' }
-     - { id: '6026DFCA', url: 'https://www.rabbitmq.com/rabbitmq-release-signing-key.asc' }
-     - { id: 'A14F4FCA', url: 'https://packages.erlang-solutions.com/debian/erlang_solutions.asc' }
      - { id: '2582E0C5', url: 'https://repos.influxdata.com/influxdb.key' }
+    become: true
+  - name: Add package signing keys (speedtest)
+    apt_key:
+      id: '379CE192D401AB61'
+      keyserver: keyserver.ubuntu.com
+      state: present
     become: true
 
   - name: Update sources list
@@ -21,149 +25,32 @@
     loop:
      - { src: 'sources.list', dest: '/etc/apt/sources.list' }
      - { src: 'amplet.list', dest: '/etc/apt/sources.list.d/amplet.list' }
-     - { src: 'erlang.list', dest: '/etc/apt/sources.list.d/erlang.list' }
-     - { src: 'influxdb.list', dest: '/etc/apt/sources.list.d/influxdb.list' }
-     - { src: 'rabbitmq.list', dest: '/etc/apt/sources.list.d/rabbitmq.list' }
-    become: true
-
-# Fix maximum Erlang version
-  - name: Set maximum Erlang version <Ubuntu >=16.04>
-    copy:
-      src: files/apt-preferences.erlang
-      dest: /etc/apt/preferences.d/erlang
-    when: "ansible_distribution == 'Ubuntu' and ansible_distribution_major_version >= '16'"
-    become: true
-
-  - name: Update APT priority <Banana Pi M3>
-    copy:
-      src: files/apt-preferences.bpim3
-      dest: /etc/apt/preferences.d/ampy
-    when: ansible_kernel == '3.4.39-BPI-M3-Kernel'
-    become: true
-
-    # Set up debconf for Steam
-  - name: Prepare for steam install
-    debconf:
-      name: "{{item.name}}"
-      question: "{{item.question}}"
-      value: "{{item.value}}"
-      vtype: "{{item.vtype}}"
-    loop:
-     - { name: steamcmd, question: steam/license, value: "true", vtype: select }
-     - { name: steamcmd, question: steam/question, value: "I AGREE", vtype: string }
+     - { src: 'speedtest.list', dest: '/etc/apt/sources.list.d/speedtest.list' }
     become: true
 
 # should update below to be tidier and read from a file
-  - name: Install packages <16.04 x86 probes>
-    when: "'probes' in group_names and ansible_distribution == 'Ubuntu' and ansible_distribution_major_version == '16' and ansible_architecture == 'x86_64'"
+  - name: Install 18.04 packages
     apt:
-      name:
-        - amplet2-client
-        - amplet2-chromium-libs
-        - chromium-codecs-ffmpeg-extra
-        - curl
-        - iftop
-        - linux-generic-hwe-16.04
-        - nmap
-        - ntp
-        - phantomjs
-        - python3-pip
-        - python3-requests
-        - steamcmd
-        - traceroute
-        - ufw
-        - whois
-      state: latest
-      update_cache: yes
-      autoremove: yes
+      deb: "{{ item }}"
     loop:
+      - http://nz.archive.ubuntu.com/ubuntu/pool/main/n/nettle/libnettle6_3.4-1_amd64.deb
+      - http://nz.archive.ubuntu.com/ubuntu/pool/main/n/nettle/libhogweed4_3.4-1_amd64.deb
+      - http://nz.archive.ubuntu.com/ubuntu/pool/main/libe/libevent/libevent-2.1-6_2.1.8-stable-4build1_amd64.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/u/unbound/libunbound2_1.6.7-1ubuntu2.3_amd64.deb
     become: true
-    notify: Restart Amplet
 
-  - name: Install packages <18.04 x86 probes>
-    when: "'probes' in group_names and ansible_distribution == 'Ubuntu' and ansible_distribution_major_version >= '18' and ansible_architecture == 'x86_64'"
+# should update below to be tidier and read from a file
+  - name: Install packages <probes>
+    when: "'probes' in group_names"
     apt:
       name:
         - amplet2-client
-        - amplet2-chromium-libs
-        - chromium-codecs-ffmpeg-extra
         - curl
         - iftop
+        - iperf3
         - nmap
         - ntp
-        - phantomjs
-        - python3-pip
-        - python3-requests
-        - steamcmd
-        - traceroute
-        - ufw
-        - whois
-      state: latest
-      update_cache: yes
-      autoremove: yes
-    become: true
-    notify: Restart Amplet
-
-# The 'amplet2-client:*' format isn't supported? https://github.com/ansible/ansible/blob/devel/lib/ansible/modules/packaging/os/apt.py
-  - name: Install packages <aarch64 probes>
-    when: "'probes' in group_names and ansible_distribution == 'Ubuntu' and ansible_distribution_major_version >= '16' and ansible_architecture == 'aarch64'"
-    apt:
-      name:
-        - amplet2-client
-        # - amplet2-chromium-libs  (pending Brendon to package)
-        - curl
-        - iftop
-        # - linux-generic-hwe-16.04  (NanoPi Neo Plus2 isn't using mainline kernel)
-        - nmap
-        - ntp
-        - phantomjs
-        - python3-netifaces
-        - python3-pip
-        - python3-requests
-        - traceroute
-        - ufw
-        - whois
-      state: latest
-      update_cache: yes
-      autoremove: yes
-    become: true
-    notify: Restart Amplet
-
-  - name: Install packages <16.04 armv7l probes>
-    when: "'probes' in group_names and ansible_distribution == 'Ubuntu' and ansible_distribution_major_version >= '16' and ansible_architecture == 'armv7l'"
-    apt:
-      name:
-        - amplet2-client
-        # - amplet2-chromium-libs  (pending Brendon to package)
-        - curl
-        - iftop
-        # - linux-generic-hwe-16.04 # doesn't work on Banana Pi's
-        - nmap
-        - ntp
-        - phantomjs
-        - python3-pip
-        - python3-requests
-        - traceroute
-        - ufw
-        - whois
-      state: latest
-      update_cache: yes
-      autoremove: yes
-    become: true
-    notify: Restart Amplet
-
-  - name: Install packages <14.04 armv7l probes>
-    when: "'probes' in group_names and ansible_distribution == 'Ubuntu' and ansible_distribution_major_version == '14'"
-    apt:
-      name:
-        - amplet2-client
-        # - amplet2-chromium-libs  (pending Brendon to package)
-        - curl
-        - iftop
-        - nmap
-        - ntp
-        - python3-pip
-        - python3-requests
+        - speedtest
         - traceroute
         - ufw
         - whois
@@ -178,15 +65,12 @@
     apt:
       name:
         - amplet2-client
-        - amplet2-chromium-libs
-        - chromium-codecs-ffmpeg-extra
         - curl
         - iftop
+        - iperf3
         - nmap
         - ntp
-        - python3-pip
-        - python3-requests
-        - steamcmd
+        - speedtest
         - telegraf
         - traceroute
         - ufw
@@ -202,15 +86,6 @@
       - Restart Amplet
       - Restart Apache
 
-# Iperf3 is a custom built off the latest source (since they don't publish a package)
-# Will need to uninstall libiperf0 on probes that have already had earlier versions of iperf installed
-# The dictionary maps the architecture variable to the filename
-  - name: Install iperf3
-    apt:
-      deb: "{{ packagesURL }}/iperf3_3.6-1_{{ {'aarch64':'arm64.deb', 'armv7l':'armhf.deb', 'x86_64':'amd64.deb'}[ansible_architecture] }}"
-      dpkg_options: force-overwrite
-    become: true
-
 # NDT is a custom built off the latest source (since they don't publish a package)
 # The dictionary maps the architecture variable to the filename
   - name: Install NDT
@@ -219,41 +94,15 @@
       dpkg_options: force-overwrite
     become: true
 
-# SRP needs to be installed via PIP because Ubuntu package is old (getRGWinfo script needs 1.0.12)
-  - name: Install SRP
-    pip:
-      name: srp
-      state: latest
-      executable: pip3
-    become: true
-
-# netifaces needs to be installed via PIP because Ubuntu14.04 package is old (getRGWinfo script needs 0.10.0)
-  - name: Install netifaces <14.04 armv7l probes>
-    pip:
-      name: netifaces
-      state: latest
-      executable: pip3
-    when: "'probes' in group_names and ansible_distribution == 'Ubuntu' and ansible_distribution_major_version == '14'"
-    become: true
-
 # The amplet2 package isn't set for startup by default (since it needs configuring first).
   - name: Enable Amplet on startup
-    when: (ansible_distribution == 'Ubuntu' and ansible_distribution_major_version >= '16') or ansible_distribution == 'Debian'
     service:
       name: amplet2-client
       enabled: yes
     become: true
     notify: Restart Amplet
-  - name: Enable Amplet on startup <Ubuntu 14>
-    when: "ansible_distribution == 'Ubuntu' and ansible_distribution_major_version == '14'"
-    lineinfile:
-      path: /etc/default/amplet2-client
-      regexp: START_DAEMON
-      line: START_DAEMON=1
-    become: true
-    notify: Restart Amplet
 
-# Disable apache2 on startup (since amplet uses port 80)
+# Disable apache2 on startup (since amplet could test to port 80)
   - name: Disable Apache on startup
     service:
       name: apache2
@@ -268,10 +117,6 @@
       dest: /usr/local/bin/{{(item | splitext)[0]}}
       mode: 0755
     loop:
-     - speedtest.py
      - ss-pretty.py
-     - steamspeed.py
-     - getYTinfo.sh
-     - getRGWinfo.py
      - ndttest.sh
     become: true

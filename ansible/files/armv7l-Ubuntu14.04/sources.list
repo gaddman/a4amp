@@ -1,8 +1,0 @@
-deb http://ports.ubuntu.com/ trusty main universe
-deb http://ports.ubuntu.com/ trusty-security main universe
-deb http://ports.ubuntu.com/ trusty-updates main universe
-deb http://ports.ubuntu.com/ trusty-backports main universe
-
-deb http://ports.ubuntu.com/ubuntu-ports trusty main universe restricted
-deb http://ports.ubuntu.com/ubuntu-ports trusty-security main universe restricted
-deb http://ports.ubuntu.com/ubuntu-ports trusty-updates main universe restricted

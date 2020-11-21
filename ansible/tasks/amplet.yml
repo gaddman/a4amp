@@ -54,9 +54,9 @@
     notify: Restart Amplet
 
 # Custom RabbitMQ config. After an Erlang upgrade to v20.1-1 SNI was required.
-  - name: RabbitMQ config
-    template:
-      src: templates/rabbitmq.config
-      dest: /etc/rabbitmq/rabbitmq.config
-    become: true
-    notify: Restart RabbitMQ
+  # - name: RabbitMQ config
+  #   template:
+  #     src: templates/rabbitmq.config
+  #     dest: /etc/rabbitmq/rabbitmq.config
+  #   become: true
+  #   notify: Restart RabbitMQ

@@ -1,0 +1,61 @@
+---
+# Setup main server
+- hosts: localhost
+  tasks:
+
+  - name: Add package signing keys
+    apt_key:
+      id: 7C4B94E8
+      url: https://bintray.com/user/downloadSubjectPublicKey?username=wand
+      state: present
+    become: true
+
+  - name: Add AMP source
+    lineinfile:
+      path: /etc/apt/sources.list.d/amplet.list
+      line: deb https://dl.bintray.com/wand/amp bionic main
+    become: true
+
+  - name: Install 18.04 packages via deb download
+    apt:
+      deb: "{{ item }}"
+    loop:
+      - http://nz.archive.ubuntu.com/ubuntu/pool/universe/p/python-daemon/python-daemon_2.1.2-2_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/p/python-urllib3/python-urllib3_1.22-1ubuntu0.18.04.2_all.deb
+      - http://security.ubuntu.com/ubuntu/pool/main/r/requests/python-requests_2.18.4-2ubuntu0.1_all.deb
+      - http://nz.archive.ubuntu.com/ubuntu/pool/universe/i/influxdb-python/python-influxdb_4.1.1-2_all.deb
+      - http://nz.archive.ubuntu.com/ubuntu/pool/main/p/python-pika/python-pika_0.11.0-1_all.deb
+      - http://nz.archive.ubuntu.com/ubuntu/pool/main/p/psycopg2/python-psycopg2_2.7.4-1_amd64.deb
+      - http://nz.archive.ubuntu.com/ubuntu/pool/universe/r/rrdtool/python-rrdtool_1.7.0-1build1_amd64.deb
+      - http://nz.archive.ubuntu.com/ubuntu/pool/universe/z/zope.hookable/python-zope.hookable_4.0.4-4build4_amd64.deb
+      - http://nz.archive.ubuntu.com/ubuntu/pool/universe/z/zope.component/python-zope.component_4.3.0-1_all.deb
+      - http://nz.archive.ubuntu.com/ubuntu/pool/universe/z/zope.deprecation/python-zope.deprecation_4.1.2-1_all.deb
+      - http://nz.archive.ubuntu.com/ubuntu/pool/universe/z/zope.event/python-zope.event_4.2.0-1_all.deb
+      - http://nz.archive.ubuntu.com/ubuntu/pool/universe/t/transaction/python-transaction_1.4.3-3_all.deb
+      - http://nz.archive.ubuntu.com/ubuntu/pool/universe/z/zope.sqlalchemy/python-zope.sqlalchemy_0.6.1-2build1_all.deb
+      - http://nz.archive.ubuntu.com/ubuntu/pool/main/w/waitress/python-waitress_1.0.1-1_all.deb
+      - http://nz.archive.ubuntu.com/ubuntu/pool/universe/p/python-chameleon/python-chameleon_2.24-1_all.deb
+      - http://nz.archive.ubuntu.com/ubuntu/pool/main/p/python-tempita/python-tempita_0.5.2-2_all.deb
+      - http://nz.archive.ubuntu.com/ubuntu/pool/main/p/paste/python-paste_2.0.3+dfsg-4ubuntu1_all.deb
+      - http://nz.archive.ubuntu.com/ubuntu/pool/main/p/pastedeploy/python-pastedeploy-tpl_1.5.2-4_all.deb
+      - http://nz.archive.ubuntu.com/ubuntu/pool/main/p/pastedeploy/python-pastedeploy_1.5.2-4_all.deb
+      - http://nz.archive.ubuntu.com/ubuntu/pool/main/p/python-repoze.lru/python-repoze.lru_0.7-1_all.deb
+      - http://nz.archive.ubuntu.com/ubuntu/pool/universe/p/python-translationstring/python-translationstring_1.3-2_all.deb
+      - http://nz.archive.ubuntu.com/ubuntu/pool/universe/p/python-venusian/python-venusian_1.1.0-1_all.deb
+      - http://nz.archive.ubuntu.com/ubuntu/pool/main/p/python-webob/python-webob_1.7.3-2fakesync1_all.deb
+      - http://nz.archive.ubuntu.com/ubuntu/pool/main/w/webtest/python-webtest_2.0.28-1ubuntu1_all.deb
+      - http://nz.archive.ubuntu.com/ubuntu/pool/universe/p/python-pyramid/python-pyramid_1.6+dfsg-1.1_all.deb
+      - http://nz.archive.ubuntu.com/ubuntu/pool/universe/p/python-pyramid-tm/python-pyramid-tm_0.5-1_all.deb
+    become: true
+
+# should update below to be tidier and read from a file
+  - name: Install current packages via apt
+    apt:
+      name:
+        - nntsc
+        - amp-web # will install ampy
+        - amppki # will install amplet2-server
+      state: latest
+      update_cache: yes
+      autoremove: yes
+    become: true

@@ -24,16 +24,9 @@
       when: "'endpoints' in group_names"
 
     - import_tasks: tasks/packages.yml
-
-    - name: Firewall
-      include_tasks: tasks/firewall.yml
-      # except older probes which don't reliably run UFW
-      when: not (ansible_distribution == 'Ubuntu' and ansible_distribution_major_version < '16')
-
+    - import_tasks: tasks/firewall.yml
     - import_tasks: tasks/environment.yml
-
     - import_tasks: tasks/amplet.yml
-
     - import_tasks: tasks/rabbitClean.yml
 
     - name: Setup webserver <endpoints>

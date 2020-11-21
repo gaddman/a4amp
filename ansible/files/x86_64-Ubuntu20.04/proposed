@@ -1,0 +1,4 @@
+# Deprioritise proposed packages so they must be installed manually
+Package: *
+Pin: release a=bionic-proposed
+Pin-Priority: 400
